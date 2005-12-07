@@ -76,7 +76,7 @@ def writeShort(stream, value):
 def readVersion(stream):
     (major, minor) = unpack("BB", stream.read(2))
     if  (major, minor) != (1, 0):
-        raise HessianError("Unsupported version " + `major` + "." + `minor`)
+        raise HessianError("Unsupported protocol version " + `major` + "." + `minor`)
     
 
 def writeVersion(stream):
@@ -219,7 +219,7 @@ types.append(Length)
 
 
 def writeReferenced(stream, writeMethod, obj):
-    """Write reference if object has bee met before.
+    """Write reference if object has been met before.
     Else write object itself."""
     
     objId = stream.getRefId(obj)
@@ -256,7 +256,7 @@ class Array:
     def _write(self, stream, value):
         stream.write(self.codes[0])
         
-        # we'll not write type because we may only guess it
+        # we'll not write type marker because we may only guess it
         # self.type_streamer.write(stream, "something")
         
         self.length_streamer.write(stream, len(value))
@@ -319,7 +319,6 @@ class Remote:
     
     def __init__():
         assert False # TODO Implement
-        
 #types.append(Remote)
 
 
