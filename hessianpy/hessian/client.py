@@ -24,61 +24,56 @@
 import hessian
 import urllib
 import httplib
-from memstream import MemStream
+from StringIO import StringIO
 
-__version__ = "0.2"
+__version__ = "0.3"
 
 class Method:
     "Encapsulates the method to be called"
     def __init__(self, invoker, method):
-	self.invoker = invoker
-	self.method = method
+        self.invoker = invoker
+        self.method = method
 
     def __call__(self, *args):
-	return self.invoker(self.method, args)
+        return self.invoker(self.method, args)
 
 
 class HttpProxy:
-    "A Hessian proxy object"
+    "A Hessian proxy class"
     
     def __init__(self, url):
-	self.url = url
-	transport, uri = urllib.splittype(url)	
-	if transport != "http":
-	    raise IOError, "unsupported Hessian protocol"
-	self.host, self.uri = urllib.splithost(uri)
+        self.url = url
+        transport, uri = urllib.splittype(url)	
+        if transport != "http":
+            raise IOError("Unsupported transport protocol '" + transport + "'")
+        self.host, self.uri = urllib.splithost(uri)
 	
-    def __invoke(self, method, params):
-        
-        s = MemStream()
+    def __invoke(self, method, params):        
+        s = StringIO()
         hessian.writeObject(hessian.WriteContext(s), \
                             (method, [], params), \
-                            hessian.Call() )
-        request = s.data
-	h = httplib.HTTPConnection(self.host)
-	h.request("POST", \
-                  self.uri, \
-                  s.data, \
-                  {"Host" : self.host, \
-                   "User-Agent" : "hessian_client.py/%s" % __version__} )
+                            hessian.Call())
+        request = s.getvalue()
+        h = httplib.HTTPConnection(self.host)
+        h.request("POST", \
+                    self.uri, \
+                    s.getvalue(), \
+                    {"Host" : self.host, \
+                    "User-Agent" : "HessianPy/%s" % __version__})
 
         response = h.getresponse()
         
         if response.status != httplib.OK:
             raise Exception("HTTP Error %d: %s" % (response.status, response.reason))
 
-        inStream = MemStream()
-        inStream.data = response.read()
+        inStream = StringIO(response.read())
         ctx = hessian.ParseContext(inStream)
-        (headers, status, value) = hessian.Reply().read(ctx, ctx.read(1))
-        
-        # print "RESULT:", headers, status, value
-        
+        (headers, status, value) = hessian.Reply().read(ctx, ctx.read(1))        
+        # print "RESULT:", headers, status, value        
         if not status:
             # value is a Hessian error description 
             raise Exception(value) 
-
-	return value
+        return value
 
     def __getattr__(self, name):
         # encapsulate the method call
