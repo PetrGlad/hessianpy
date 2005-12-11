@@ -5,7 +5,6 @@
 # http://www.caucho.com/resin-3.0/protocols/hessian-1.0-spec.xtp
 #
 # This file contains client proxy code.
-# Usage example: 
 #
 # Copyright 2005 Petr Gladkikh (batyi at mail ru)
 #

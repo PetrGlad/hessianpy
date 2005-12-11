@@ -315,6 +315,7 @@ types.append(Ref)
 
 
 class Remote:
+    
     codes = ["r"] # note "remote" code clashes with "reply" code
     
     def __init__():
@@ -351,13 +352,9 @@ class Method(ShortSequence):
 types.append(Method)
 
 
-class Xml:
-    codes = ["X"]
-    
-    def __init__():
-        assert False # TODO Implement
-        
-#types.append(Xml)
+class Xml(Chunked):
+    codes = ["X", "x"]
+types.append(Xml)
 
 
 class Call:

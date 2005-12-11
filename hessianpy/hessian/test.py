@@ -72,7 +72,7 @@ def loopbackTest():
     loopBackTest(Array, [[[3]]])
     loopBackTest(Map, {})
     loopBackTest(Map, {1 : 2})
-
+    loopBackTestTyped(Xml, u"<hello who=\"??????, ???!\"/>")
 
 def serializeCallTest():
     loopBackTest(Call, ("aaa", [], []))
