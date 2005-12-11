@@ -25,7 +25,7 @@ import urllib
 import httplib
 from StringIO import StringIO
 
-__version__ = "0.3"
+__version__ = "0.3.1"
 
 class Method:
     "Encapsulates the method to be called"
