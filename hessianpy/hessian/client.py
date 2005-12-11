@@ -38,7 +38,9 @@ class Method:
 
 
 class HttpProxy:
-    "A Hessian proxy class"
+    """ A Hessian proxy class.
+     TODO: support HTTPS (and perhaps other transports - why not ssh?).
+    """
     
     def __init__(self, url):
         self.url = url

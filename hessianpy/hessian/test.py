@@ -4,7 +4,7 @@
 # Protocol specification can be found here
 # http://www.caucho.com/resin-3.0/protocols/hessian-1.0-spec.xtp
 #
-# This file contains tests.
+# This file contains some tests for HessianPy library.
 #
 # Copyright 2005 Petr Gladkikh (batyi at mail ru)
 #
@@ -64,7 +64,7 @@ def loopbackTest():
     loopBackTest(Double, 123.321)
     loopBackTest(String, "")
     loopBackTest(String, "Nice to see ya!")
-    loopBackTest(Binary, "Nice to see ya! )*)(*&)(*&)(*&)(*&&*^%&^%$%^$%$!#@!")
+    loopBackTest(Binary, "Nice to see ya! )*)(*&)(*\x00&)(*&)(*&&*\x09^%&^%$%^$%$!#@!")
     loopBackTest(Array, [])
     loopBackTest(Array, ["123", 1])
     loopBackTest(Array, [3, 3])
@@ -73,6 +73,7 @@ def loopbackTest():
     loopBackTest(Map, {})
     loopBackTest(Map, {1 : 2})
     loopBackTestTyped(Xml, u"<hello who=\"??????, ???!\"/>")
+
 
 def serializeCallTest():
     loopBackTest(Call, ("aaa", [], []))
@@ -113,13 +114,13 @@ def callTest():
         ##    for i in range(1000):
         ##        proxy.getLocalMember()
         ##    fin = time()
-        ##    print "one call costs", (fin - start)/1000, "sec."        
+        ##    print "one call takes", (fin - start)/1000, "sec."        
         
     except Exception, e:
         if e.args == (10061, 'Connection refused'):
             print "Warning: Server '" + url +  "'is not available. Can not perform callTest"
         else:
-            raise e   
+            raise e
     
 
 if __name__=="__main__":
