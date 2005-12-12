@@ -4,7 +4,7 @@
 # Protocol specification can be found here
 # http://www.caucho.com/resin-3.0/protocols/hessian-1.0-spec.xtp
 #
-# This file contains tests.
+# This file contains some tests for HessianPy library.
 #
 # Copyright 2005 Petr Gladkikh (batyi at mail ru)
 #
@@ -22,12 +22,12 @@
 #
 from hessian import *
 from client import *
-from memstream import MemStream
+from StringIO import StringIO
 from time import time
 
     
 def loopBackTest(classRef, value):
-    s = MemStream()
+    s = StringIO()
     o = classRef()
     o.write(WriteContext(s), value)
     # print "[" + s.data + "]" # debug
@@ -45,7 +45,7 @@ def loopBackTest(classRef, value):
 
 def loopBackTestTyped(classRef, value):
     "This test is for objects with ambiguous type prefixes"
-    s = MemStream()
+    s = StringIO()
     o = classRef()
     o.write(WriteContext(s), value)
     # print "T[" + s.data + "]" # debug
@@ -64,7 +64,7 @@ def loopbackTest():
     loopBackTest(Double, 123.321)
     loopBackTest(String, "")
     loopBackTest(String, "Nice to see ya!")
-    loopBackTest(Binary, "Nice to see ya! )*)(*&)(*&)(*&)(*&&*^%&^%$%^$%$!#@!")
+    loopBackTest(Binary, "Nice to see ya! )*)(*&)(*\x00&)(*&)(*&&*\x09^%&^%$%^$%$!#@!")
     loopBackTest(Array, [])
     loopBackTest(Array, ["123", 1])
     loopBackTest(Array, [3, 3])
@@ -72,6 +72,7 @@ def loopbackTest():
     loopBackTest(Array, [[[3]]])
     loopBackTest(Map, {})
     loopBackTest(Map, {1 : 2})
+    loopBackTestTyped(Xml, u"<hello who=\"??????, ???!\"/>")
 
 
 def serializeCallTest():
@@ -103,15 +104,23 @@ def referenceTest():
     
 
 def callTest():
-    proxy = HttpProxy("http://localhost:8080/discore/party")
-    
-##    start = time()    
-##    for i in range(1000):
-##        proxy.getLocalMember()
-##    fin = time()
-##    print "one call costs", (fin - start)/1000, "sec."
-    
-    print proxy.getLocalMember()
+    url = "http://localhost:8080/discore/party"
+    try:
+        proxy = HttpProxy(url)
+        print proxy.getLocalMember()
+        
+        ##    Some speed measurements
+        ##    start = time()    
+        ##    for i in range(1000):
+        ##        proxy.getLocalMember()
+        ##    fin = time()
+        ##    print "one call takes", (fin - start)/1000, "sec."        
+        
+    except Exception, e:
+        if e.args == (10061, 'Connection refused'):
+            print "Warning: Server '" + url +  "'is not available. Can not perform callTest"
+        else:
+            raise e
     
 
 if __name__=="__main__":
@@ -119,7 +128,7 @@ if __name__=="__main__":
     serializeCallTest()
     serializeReplyTest()
     referenceTest()
-    
+        
     callTest()
 
-    print "Everything is fine."    
+    print "Tests passed."

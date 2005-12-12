@@ -7,8 +7,16 @@ See hello.py for sample code.
 
 
 	RELEASE NOTES
+	
+v0.3.1 2005-12-11
+	1. Added support for XML objects (as plain strings) 
+	2. Added partial (no serialization) implementation of remote interface reference.
+	3. Got rid of memstream.py - now standard StringIO is used.
+Note that only plain HTTP is supported as a transport. The library still lacks 
+server-side functionality which is necessary to test all patrs of the library.
 
-v0.2 2005-11-21
+
+v0.3 2005-11-21
 Initial implementation. It does not support remote references. Look for
 "TODO" string in source to find not implemented parts. It also may have
 problems with Unicode strings (it's not tested yet). The code also needs to
@@ -23,7 +31,6 @@ licence.txt - contains distribtution license.
 hello.py - contains sample client code.
 client.py - client proxy code
 hessian.py - serialising/deserializing code
-memstream.py - auxiliary stream implementation
 test.py - tests for this library
 
 

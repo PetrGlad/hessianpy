@@ -76,7 +76,7 @@ def writeShort(stream, value):
 def readVersion(stream):
     (major, minor) = unpack("BB", stream.read(2))
     if  (major, minor) != (1, 0):
-        raise HessianError("Unsupported version " + `major` + "." + `minor`)
+        raise HessianError("Unsupported protocol version " + `major` + "." + `minor`)
     
 
 def writeVersion(stream):
@@ -176,7 +176,7 @@ class ShortSequence:
         "We could split large data into chunks here."
         stream.write(self.codes[0])
         writeShort(stream, len(value))
-        stream.write(value)	
+        stream.write(value)    
 
 
 class Chunked(ShortSequence):
@@ -208,9 +208,9 @@ class Binary(Chunked):
 types.append(Binary)
 
 
-class Type(ShortSequence):
+class TypeName(ShortSequence):
     codes = ["t"]    
-types.append(Type)
+types.append(TypeName)
 
 
 class Length(BasicInt):
@@ -219,7 +219,7 @@ types.append(Length)
 
 
 def writeReferenced(stream, writeMethod, obj):
-    """Write reference if object has bee met before.
+    """Write reference if object has been met before.
     Else write object itself."""
     
     objId = stream.getRefId(obj)
@@ -233,7 +233,7 @@ class Array:
     codes = ["V"]
     ptype = list
 
-    type_streamer = Type()
+    type_streamer = TypeName()
     length_streamer = Length()
     
     def read(self, stream, prefix):
@@ -256,7 +256,7 @@ class Array:
     def _write(self, stream, value):
         stream.write(self.codes[0])
         
-        # we'll not write type because we may only guess it
+        # we'll not write type marker because we may only guess it
         # self.type_streamer.write(stream, "something")
         
         self.length_streamer.write(stream, len(value))
@@ -273,12 +273,12 @@ class Map:
     codes = ["M"]
     ptype = dict
 
-    type_streamer = Type()
+    type_streamer = TypeName()
     
     def read(self, stream, prefix):
         assert prefix in self.codes
         prefix = stream.read(1)
-        if prefix in Type.codes:
+        if prefix in TypeName.codes:
             self.type_streamer.read(stream, prefix)
             prefix = stream.read(1)
         result = {}
@@ -303,6 +303,8 @@ types.append(Map)
 
 
 class Ref(BasicInt):
+    """ Reference to a previously occured object 
+    (allows sharing objects in a map or a list) """
     codes = ["R"]
 
     def read(self, stream, prefix):
@@ -313,17 +315,39 @@ class Ref(BasicInt):
         BasicInt.write(self, stream, objId)
 types.append(Ref)
 
+import client
 
 class Remote:
-    codes = ["r"] # note "remote" code clashes with "reply" code
+    "Reference to a remote interface."
+    codes = ["r"]
     
-    def __init__():
-        assert False # TODO Implement
+    typename_streamer = TypeName()
+    url_streamer = String()
         
-#types.append(Remote)
+    def read(self, stream, prefix):        
+        assert prefix in self.codes
+        # skip typeNmae of remote interface        
+        self.typename_streamer.read(stream, stream.read(1))
+        # read url
+        url = self.url_streamer(stream, stream.read(1))
+        
+        # NOTE: non HTTP transports are not yet supported.
+        # TODO: (See comments to HttpProxy class)
+        return client.HttpProxy(url)
+    
+    def write(self, stream, remote):
+        # TODO: decide what to accept here. 
+        # Should we require proxy objec here for sake of consitency? (see 'read' method)
+        assert False # code is not tested.
+        stream.write(self.codes[0])
+        typeName, url = remote        
+        self.type_streamer.write(stream, typeName)
+        self.url_streamer.write(stream, url)
+types.append(Remote)
 
 
 class Header:
+    "A (name, value) pair"
     codes = ["H"]
 
     title_streamer = ShortSequence()
@@ -352,16 +376,13 @@ class Method(ShortSequence):
 types.append(Method)
 
 
-class Xml:
-    codes = ["X"]
-    
-    def __init__():
-        assert False # TODO Implement
-        
-#types.append(Xml)
+class Xml(Chunked):
+    codes = ["X", "x"]
+types.append(Xml)
 
 
 class Call:
+    "Represents request to a remote interface."
     codes = ["c"]
     
     method_streamer = Method()
@@ -414,6 +435,7 @@ types.append(Call)
 
 
 class Fault:
+    "Remote_call error_description."
     codes = ["f"]
     
     def read(self, stream, prefix):
@@ -437,7 +459,14 @@ types.append(Call)
 
 
 class Reply:
+    """ Result of remote call.
+    
+    Note "Remote" code clashes with "Reply" code. 
+    And Reply is always read explicitly. 
+    Thus do not register it in global type map.
+    """
     autoRegister = False
+    
     codes = ["r"]
 
     header_streamer = Header()
@@ -483,6 +512,9 @@ types.append(Reply)
 
 
 def makeTypeMaps(types):
+    """ Build maps that allow to find apropriate 
+    serializer (by object type) or deserializer (by prefix symbol).
+    """
     codeMap = {} # type code to streamer map
     typeMap = {} # python type to streamer map
     for c in types:

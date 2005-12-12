@@ -1,0 +1,5 @@
+1. Support HTTP authorization
+2. Support HTTPS
+3. Implement some server that is at least sufficient for testing purposes
+4. Test remote interface references
+5. Add python module installator
