@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 #
 # Hessian protocol implementation
 #
@@ -43,14 +44,19 @@ def loopBackTest(classRef, value):
     assert res
 
 
-def loopBackTestTyped(classRef, value):
-    "This test is for objects with ambiguous type prefixes"
+def loopBackTestTyped(classRef, value, converter = None):
+    """ This test is for objects with ambiguous type prefixes,
+    'converter' is used for types that are not preserved after
+    serialization
+    """
     s = StringIO()
     o = classRef()
     o.write(WriteContext(s), value)
     # print "T[" + s.data + "]" # debug
     s.seek(0)
     s_in = ParseContext(s)
+    if converter != None:
+        value = converter(value)
     assert o.read(s_in, s_in.read(1)) == value
 
 
@@ -59,12 +65,12 @@ def loopbackTest():
     loopBackTest(Bool, True)
     loopBackTest(Bool, False)    
     loopBackTest(Int, 12343)
-    loopBackTest(Long, 2403914806071207089)
+    loopBackTest(Long, 2403914806071207089L)
     loopBackTest(Double, 0.0)
     loopBackTest(Double, 123.321)
     loopBackTest(String, "")
     loopBackTest(String, "Nice to see ya!")
-    loopBackTest(Binary, "Nice to see ya! )*)(*&)(*\x00&)(*&)(*&&*\x09^%&^%$%^$%$!#@!")
+    loopBackTest(Binary, "\x07Nice to see ya! )*)(*кампутер&)(*\x00&)(*&)(*&&*\x09^%&^%$%^$%$!#@!")
     loopBackTest(Array, [])
     loopBackTest(Array, ["123", 1])
     loopBackTest(Array, [3, 3])
@@ -72,7 +78,11 @@ def loopbackTest():
     loopBackTest(Array, [[[3]]])
     loopBackTest(Map, {})
     loopBackTest(Map, {1 : 2})
-    loopBackTestTyped(Xml, u"<hello who=\"??????, ???!\"/>")
+    loopBackTestTyped(Xml, u"<hello who=\"Привет, мир!\"/>")
+    
+    loopBackTestTyped(Tuple, (), list)
+    loopBackTestTyped(Tuple, (1,), list)
+    loopBackTestTyped(Tuple, ("equivalence", 1, {"":[]}), list)
 
 
 def serializeCallTest():
@@ -86,10 +96,10 @@ def serializeCallTest():
 
 
 def serializeReplyTest():    
-    loopBackTestTyped( Reply, ([], True, 1) )
-    loopBackTestTyped( Reply, ([], True, {"code" : [1, 2]}) )
-    loopBackTestTyped( Reply, ([], False, {}) )
-    loopBackTestTyped( Reply, ([], False, {"code" : "value"}) )
+    loopBackTestTyped(Reply, ([], True, 1))
+    loopBackTestTyped(Reply, ([], True, {"code" : [1, 2]}))
+    loopBackTestTyped(Reply, ([], False, {}))
+    loopBackTestTyped(Reply, ([], False, {"code" : "value"}))
 
 
 def referenceTest():
@@ -101,10 +111,16 @@ def referenceTest():
     b = [a, 1]
     a[0] = b
     loopBackTest(Call, ("aaa", [], [b, a]))
-    
 
-def callTest():
-    url = "http://localhost:8080/discore/party"
+
+def warnConnectionRefused(exception):
+    if e.args == (10061, 'Connection refused'):
+        print "Warning: Server '" + url +  "'is not available. Can not perform callTest"
+    else:
+        raise e
+
+
+def callTest0(url):
     try:
         proxy = HttpProxy(url)
         print proxy.getLocalMember()
@@ -117,18 +133,53 @@ def callTest():
         ##    print "one call takes", (fin - start)/1000, "sec."        
         
     except Exception, e:
-        if e.args == (10061, 'Connection refused'):
-            print "Warning: Server '" + url +  "'is not available. Can not perform callTest"
-        else:
-            raise e
+        warnConnectionRefused(e)
+
+
+def callTest1(url):
+    proxy = client.HttpProxy(url)
     
+    proxy.nullCall()
+    
+    assert "Hello, world" == proxy.hello()
+    print '.',
+    o = {1:"one", 2:"two"}
+    assert o == proxy.echo(o)
+    print '.',
+    o = (-1, -2)
+    assert list(o) == proxy.echo(o)
+    print '.',
+    o = ["S-word", "happen-s"]
+    assert o == proxy.echo(o)
+    print '.',
+    a, b = 1902, 34
+    assert (a - b) == proxy.subtract(a, b)
+    print '.',    
+    
+    # TODO Reproduce exception raising locally
+#    try:
+#        proxy.fault()
+#        assert False # should not reach this line
+#    except Exception, e:
+#        pass
+#        print "\nCaught exception: ", e # debug
+#    print '.',
 
-if __name__=="__main__":
-    loopbackTest()
-    serializeCallTest()
-    serializeReplyTest()
-    referenceTest()
+if __name__ == "__main__":
+    try:
+        loopbackTest()
+        print '.',
+        serializeCallTest()
+        print '.',
+        serializeReplyTest()
+        print '.',
+        referenceTest()
+        print '.',
         
-    callTest()
-
-    print "Tests passed."
+        # callTest0("http://localhost:8080/discore/party")
+        callTest1("http://www.caucho.com/hessian/test/basic")
+        
+        print "\nTests passed."
+        
+    except Exception, e:
+        print "\nAn error occured:", e
