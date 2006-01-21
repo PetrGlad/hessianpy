@@ -1,13 +1,12 @@
 #
 # Hessian protocol implementation
+# This file contains serialization/deserialization code.
+# Note: Please look for "TODO" string to find not implemented parts.
 #
 # Protocol specification can be found here
 # http://www.caucho.com/resin-3.0/protocols/hessian-1.0-spec.xtp
 #
-# This file contains serialization/deserialization code.
-# Note: Please look for "TODO" string to find not implemented parts.
-#
-# Copyright 2005 Petr Gladkikh (batyi at mail ru)
+# Copyright 2005, 2006 Petr Gladkikh (batyi at sourceforge net)
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -242,7 +241,7 @@ class Array:
         if prefix in self.type_streamer.codes:
             self.type_streamer.read(stream, prefix)
             prefix = stream.read(1)
-        count = self.length_streamer.read(stream, prefix)
+        count = self.length_streamer.read(stream, prefix)        
         prefix = stream.read(1)        
         result = []
         stream.referencedObjects.append(result)        
@@ -267,6 +266,13 @@ class Array:
     def write(self, stream, value):
         writeReferenced(stream, self._write, value)
 types.append(Array)
+
+
+class Tuple(Array):
+    "This class serialises tuples. They are always read as arrays"
+    codes = ["V"]
+    ptype = tuple
+types.append(Tuple)    
 
 
 class Map:
@@ -314,36 +320,6 @@ class Ref(BasicInt):
     def write(self, stream, objId):
         BasicInt.write(self, stream, objId)
 types.append(Ref)
-
-import client
-
-class Remote:
-    "Reference to a remote interface."
-    codes = ["r"]
-    
-    typename_streamer = TypeName()
-    url_streamer = String()
-        
-    def read(self, stream, prefix):        
-        assert prefix in self.codes
-        # skip typeNmae of remote interface        
-        self.typename_streamer.read(stream, stream.read(1))
-        # read url
-        url = self.url_streamer(stream, stream.read(1))
-        
-        # NOTE: non HTTP transports are not yet supported.
-        # TODO: (See comments to HttpProxy class)
-        return client.HttpProxy(url)
-    
-    def write(self, stream, remote):
-        # TODO: decide what to accept here. 
-        # Should we require proxy objec here for sake of consitency? (see 'read' method)
-        assert False # code is not tested.
-        stream.write(self.codes[0])
-        typeName, url = remote        
-        self.type_streamer.write(stream, typeName)
-        self.url_streamer.write(stream, url)
-types.append(Remote)
 
 
 class Header:
@@ -455,16 +431,15 @@ class Fault:
         for k, v in fault.items():
             writeObject(stream, k, None)
             writeObject(stream, v, None)            
-types.append(Call)
+types.append(Fault)
 
 
 class Reply:
-    """ Result of remote call.
+    "Result of remote call."
     
-    Note "Remote" code clashes with "Reply" code. 
-    And Reply is always read explicitly. 
-    Thus do not register it in global type map.
-    """
+    """Note "Remote" code clashes with "Reply" code 
+    and Reply is always read explicitly. 
+    Thus do not register it in global type map. """
     autoRegister = False
     
     codes = ["r"]
@@ -509,6 +484,38 @@ class Reply:
             self.fault_streamer.write(stream, result)
         stream.write("z")
 types.append(Reply)
+
+
+# We need it for class Remote. Unfortunately this introduces cyclic references
+import client 
+
+class Remote:
+    "Reference to a remote interface."
+    codes = ["r"]
+    
+    typename_streamer = TypeName()
+    url_streamer = String()
+        
+    def read(self, stream, prefix):        
+        assert prefix in self.codes
+        # skip typeNmae of remote interface        
+        self.typename_streamer.read(stream, stream.read(1))
+        # read url
+        url = self.url_streamer(stream, stream.read(1))
+        
+        # NOTE: non HTTP transports are not yet supported.
+        # TODO: (See comments to HttpProxy class)
+        return client.HttpProxy(url)
+    
+    def write(self, stream, remote):
+        # TODO: decide what to accept here. 
+        # Should we require proxy object here for sake of consitency? (see 'read' method)
+        assert False # code is not tested.
+        stream.write(self.codes[0])
+        typeName, url = remote        
+        self.type_streamer.write(stream, typeName)
+        self.url_streamer.write(stream, url)
+types.append(Remote)
 
 
 def makeTypeMaps(types):
@@ -561,8 +568,9 @@ class WriteContext:
 
             
 if __name__ == "__main__":
+    print "Registered types:"
     for t in types:
         print t, 
         for c in t.codes:
-            print c,
+            print c, 
         print
