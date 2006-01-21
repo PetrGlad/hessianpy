@@ -1,12 +1,22 @@
 This directory contains hessian protocol implementation.
-Author Petr Gladkikh (batyi at mail ru)
+Author Petr Gladkikh (batyi at sourceforge net)
 
-See http://www.caucho.com/resin-3.0/protocols/hessian.xtp for hessian protocol introduction.
-Protocol specification http://www.caucho.com/resin-3.0/protocols/hessian-1.0-spec.xtp
+See http://www.caucho.com/resin-3.0/protocols/hessian.xtp for hessian 
+protocol introduction. Protocol specification is at 
+http://www.caucho.com/resin-3.0/protocols/hessian-1.0-spec.xtp
 See hello.py for sample code.
 
 
 	RELEASE NOTES
+
+v0.3.2 2006-01-21
+	1. Tuple serialization added (it is serialized as an array)
+	2. Now test suite pulls every method in 
+"http://www.caucho.com/hessian/test/basic" public interface. 
+	2.1 Although one apparent exception handling bug fixed, can not
+verify it because call to BasicAPI.fault() hangs (can not get
+response from server).
+
 	
 v0.3.1 2005-12-11
 	1. Added support for XML objects (as plain strings) 
@@ -38,4 +48,5 @@ test.py - tests for this library
 
 I wrote this implementation because pythonic implementation that is
 published at the caucho.com site (see http://www.caucho.com/hessian/) does
-not work and seems to be abandoned.
+not work and seems to be abandoned. On the other hand the protocol is rather
+straightforward and can be implemented with reasonable effort.
