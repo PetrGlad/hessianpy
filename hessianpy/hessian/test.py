@@ -23,8 +23,12 @@
 #
 from hessian import *
 from client import *
+from server import HessianHTTPRequestHandler
+from BaseHTTPServer import HTTPServer
 from StringIO import StringIO
 from time import time
+import traceback
+from threading import Thread
 
     
 def loopBackTest(classRef, value):
@@ -85,7 +89,7 @@ def loopbackTest():
     loopBackTestTyped(Tuple, ("equivalence", 1, {"":[]}), list)
 
 
-def serializeCallTest():
+def serializeCallTest():    
     loopBackTest(Call, ("aaa", [], []))
     loopBackTest(Call, ("aaa", [], [1]))
     loopBackTest(Call, ("aaa", [], ["ddd", 1]))
@@ -113,57 +117,107 @@ def referenceTest():
     loopBackTest(Call, ("aaa", [], [b, a]))
 
 
-def warnConnectionRefused(exception):
-    if e.args == (10061, 'Connection refused'):
-        print "Warning: Server '" + url +  "'is not available. Can not perform callTest"
-    else:
-        raise e
+# ---------------------------------------------------------
+# remote call tests
 
+
+def warnConnectionRefused(exception, url):
+    if exception.args == (10061, 'Connection refused') \
+        or exception.args == (11001, 'getaddrinfo failed'):
+        print "\nWarning: Server '" + url +  "'is not available. Can not perform a callTest"
+        return True
+    else:
+        return False
+
+
+message = "Hello, from HessianPy!"
+
+
+class TestHandler(HessianHTTPRequestHandler):   
+    
+    def hello():
+        return message
+
+    def askBitchy():
+        raise Exception("Go away!")
+    
+    message_map = {
+                       "hello" : hello,
+                       "askBitchy" : askBitchy }
+
+
+class TestServer(Thread):    
+    def run(self):            
+        print "Starting test server"
+        server_address = ('localhost', 9001)
+        httpd = HTTPServer(server_address, TestHandler)
+        print "Serving from ", server_address
+        httpd.serve_forever()
+   
 
 def callTest0(url):
+    srv = TestServer()
+    srv.setDaemon(True)
+    srv.start()
+    
+    proxy = HttpProxy(url)
+    message = proxy.hello()
+    assert message == message
+        
     try:
-        proxy = HttpProxy(url)
-        print proxy.getLocalMember()
-        
-        ##    Some speed measurements
-        ##    start = time()    
-        ##    for i in range(1000):
-        ##        proxy.getLocalMember()
-        ##    fin = time()
-        ##    print "one call takes", (fin - start)/1000, "sec."        
-        
+        proxy.askBitchy()
+        assert False # should not get here
     except Exception, e:
-        warnConnectionRefused(e)
+        # print traceback.format_exc() # debug
+        pass
+        
+    if False:
+        print "Some performance measurements..."
+        count = 500
+        start = time()
+        for i in range(count):
+            proxy.hello()
+        fin = time()
+        print "One call takes", 1000 * (fin - start) / count, "mSec."        
+        
+    # TODO: How can we kill server while it's waiting on socket?
+    srv = None    
 
 
 def callTest1(url):
-    proxy = client.HttpProxy(url)
-    
-    proxy.nullCall()
-    
-    assert "Hello, world" == proxy.hello()
-    print '.',
-    o = {1:"one", 2:"two"}
-    assert o == proxy.echo(o)
-    print '.',
-    o = (-1, -2)
-    assert list(o) == proxy.echo(o)
-    print '.',
-    o = ["S-word", "happen-s"]
-    assert o == proxy.echo(o)
-    print '.',
-    a, b = 1902, 34
-    assert (a - b) == proxy.subtract(a, b)
-    print '.',    
-    
-    # TODO Reproduce exception raising locally
-#    try:
-#        proxy.fault()
-#        assert False # should not reach this line
-#    except Exception, e:
-#        pass
-#        print "\nCaught exception: ", e # debug
-#    print '.',
+    try:
+        proxy = client.HttpProxy(url)
+        
+        proxy.nullCall()
+        
+        assert "Hello, world" == proxy.hello()
+        print '.',
+        o = {1:"one", 2:"two"}
+        assert o == proxy.echo(o)
+        print '.',
+        o = (-1, -2)
+        assert list(o) == proxy.echo(o)
+        print '.',
+        o = ["S-word", "happen-s"]
+        assert o == proxy.echo(o)
+        print '.',
+        a, b = 1902, 34
+        assert (a - b) == proxy.subtract(a, b)
+        print '.',    
+        
+        # TODO Reproduce exception raising locally
+    #    try:
+    #        proxy.fault()
+    #        assert False # should not reach this line
+    #    except Exception, e:
+    #        pass
+    #        print "\nCaught exception: ", e # debug
+    #    print '.',
+    except Exception, e:
+        st = traceback.format_exc()
+        if not warnConnectionRefused(e, url):
+            print st
+            raise e # re-thow
 
 if __name__ == "__main__":
     try:
@@ -176,10 +230,11 @@ if __name__ == "__main__":
         referenceTest()
         print '.',
         
-        # callTest0("http://localhost:8080/discore/party")
+        callTest0("http://localhost:9001/")
         callTest1("http://www.caucho.com/hessian/test/basic")
         
         print "\nTests passed."
         
     except Exception, e:
-        print "\nAn error occured:", e
+        st = traceback.format_exc()
+        print "\nError occured:\n", st

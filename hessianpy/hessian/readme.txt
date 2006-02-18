@@ -8,6 +8,11 @@ See hello.py for sample code.
 
 
 	RELEASE NOTES
+	
+v0.3.3 2006-02-18
+	1. Remote exception handling fixed, self-hosted remote call tests added	
+	2. Simple RPC server added. This server is intended for testing purposes.
+	3. Note: TODO has changed
 
 v0.3.2 2006-01-21
 	1. Tuple serialization added (it is serialized as an array)
@@ -40,6 +45,7 @@ implementation would require some kind of HTTP server.
 licence.txt - contains distribtution license.
 hello.py - contains sample client code.
 client.py - client proxy code
+server.py - simple RPC server
 hessian.py - serialising/deserializing code
 test.py - tests for this library
 

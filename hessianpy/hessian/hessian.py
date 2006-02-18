@@ -20,8 +20,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from struct import unpack
-from struct import pack
+from struct import pack, unpack
 
 
 types = []
@@ -58,7 +57,7 @@ def readObjectByPrefix(stream, prefix):
 
 
 def writeObject(stream, value, htype):
-    "Write value, with specified type"
+    "Write value with specified type"
     if htype is None: # autodetect type
         htype = TYPE_MAP[type(value)]
     htype.write(stream, value)       
@@ -179,7 +178,7 @@ class ShortSequence:
 
 
 class Chunked(ShortSequence):
-    """Codes mean following: codes[1] starts all chunks but last;
+    """'codes' mean following: codes[1] starts all chunks but last;
     codes[0] starts last chunk."""
 
     readChunk = ShortSequence.read # shortcut
