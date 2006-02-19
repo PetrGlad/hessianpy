@@ -14,6 +14,7 @@ v0.3.3 2006-02-18
 	2. Simple RPC server added. This server is intended for testing purposes.
 	3. Note: TODO has changed
 
+
 v0.3.2 2006-01-21
 	1. Tuple serialization added (it is serialized as an array)
 	2. Now test suite pulls every method in 
@@ -46,7 +47,7 @@ licence.txt - contains distribtution license.
 hello.py - contains sample client code.
 client.py - client proxy code
 server.py - simple RPC server
-hessian.py - serialising/deserializing code
+hessian.py - serializing/deserializing code
 test.py - tests for this library
 
 
