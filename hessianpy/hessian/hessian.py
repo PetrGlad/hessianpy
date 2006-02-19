@@ -1,7 +1,6 @@
 #
 # Hessian protocol implementation
 # This file contains serialization/deserialization code.
-# Note: Please look for "TODO" string to find not implemented parts.
 #
 # Protocol specification can be found here
 # http://www.caucho.com/resin-3.0/protocols/hessian-1.0-spec.xtp
@@ -33,8 +32,9 @@ class HessianError(Exception):
     pass
 
 
-# describes contract for value serializers
 class ValueStreamer:
+    "Describes contract for value serializers"
+    
     codes = None  # type code list
     ptype = None # Python type of value
     
@@ -171,7 +171,6 @@ class ShortSequence:
         return stream.read(count)
 
     def write(self, stream, value):
-        "We could split large data into chunks here."
         stream.write(self.codes[0])
         writeShort(stream, len(value))
         stream.write(value)    
@@ -181,19 +180,31 @@ class Chunked(ShortSequence):
     """'codes' mean following: codes[1] starts all chunks but last;
     codes[0] starts last chunk."""
 
-    readChunk = ShortSequence.read # shortcut
+    readChunk = ShortSequence.read # shortcut    
 
     def read(self, stream, prefix):
         result = "";
         while (prefix == self.codes[1]):
-            result += self.readChunk(stream)
+            result += self.readChunk(stream, self.codes[1])
             prefix = stream.read(1)
         assert prefix == self.codes[0]
         result += self.readChunk(stream, prefix)
         return result
 
-    # to write in chunks need to overload "write" method
-
+    def write(self, stream, value):
+        chunk_size = 2**14
+        length = len(value)
+        pos = 0
+        while pos < length - chunk_size:
+            stream.write(self.codes[1])
+            writeShort(stream, chunk_size)
+            stream.write(value[pos : pos + chunk_size])
+            pos += chunk_size
+        # write last chunk
+        stream.write(self.codes[0])
+        writeShort(stream, length - pos)
+        stream.write(value[pos : ])        
+    
     
 class String(Chunked):
     codes = ["S", "s"]
@@ -485,12 +496,15 @@ class Reply:
 types.append(Reply)
 
 
-# We need it for class Remote. Unfortunately this introduces cyclic references
-import client 
+class RemoteReference:
+    def __init__(self, url):
+        self.url = url
+
 
 class Remote:
     "Reference to a remote interface."
     codes = ["r"]
+    ptype = RemoteReference
     
     typename_streamer = TypeName()
     url_streamer = String()
@@ -504,16 +518,14 @@ class Remote:
         
         # NOTE: non HTTP transports are not yet supported.
         # TODO: (See comments to HttpProxy class)
-        return client.HttpProxy(url)
+        return RemoteReference(url)
     
     def write(self, stream, remote):
-        # TODO: decide what to accept here. 
-        # Should we require proxy object here for sake of consitency? (see 'read' method)
-        assert False # code is not tested.
+        "remote - RemoteReference-like object"
         stream.write(self.codes[0])
-        typeName, url = remote        
+        typeName, url = remote
         self.type_streamer.write(stream, typeName)
-        self.url_streamer.write(stream, url)
+        self.url_streamer.write(stream, remote.url)
 types.append(Remote)
 
 

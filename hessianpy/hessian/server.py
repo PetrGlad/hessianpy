@@ -25,10 +25,11 @@ from StringIO import StringIO
 import traceback
 
 
-class HessianHTTPRequestHandler(BaseHTTPRequestHandler):
-        
+class HessianHTTPRequestHandler(BaseHTTPRequestHandler):    
     """Subclasses should create clss's member message_map which maps method 
     names into function objects """
+    
+    MAX_CHUNK_SIZE = 2^11
     
     def do_POST(self):        
         try:
@@ -71,8 +72,7 @@ def hello():
     return "Hello, from HessianPy!"
 
 
-class TestHandler(HessianHTTPRequestHandler):  
-      
+class TestHandler(HessianHTTPRequestHandler):      
     message_map = {"hello" : hello}        
     
                 

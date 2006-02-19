@@ -121,6 +121,10 @@ def referenceTest():
 # remote call tests
 
 
+SECRET_MESSAGE = "Hello, from HessianPy!"
+TEST_PORT = 7777
+
+
 def warnConnectionRefused(exception, url):
     if exception.args == (10061, 'Connection refused') \
         or exception.args == (11001, 'getaddrinfo failed'):
@@ -130,29 +134,58 @@ def warnConnectionRefused(exception, url):
         return False
 
 
-message = "Hello, from HessianPy!"
-
-
 class TestHandler(HessianHTTPRequestHandler):   
+
+    OTHER_PREFIX = "somewhere"
+    
+    def nothing():
+        pass
     
     def hello():
-        return message
-
+        return SECRET_MESSAGE
+    
+    def echo(some):
+        return some
+        
     def askBitchy():
         raise Exception("Go away!")
     
+    def redirect(home_url):
+        assert False # todo
+        return client.HttpProxy(home_url + TestHandler.OTHER_PREFIX)
+    
+    def sum(a, b):
+        return a + b
+    
     message_map = {
-                       "hello" : hello,
-                       "askBitchy" : askBitchy }
+                   "nothing" : nothing,
+                   "hello" : hello,
+                   "askBitchy" : askBitchy,
+                   "echo" : echo,
+                   "redirect" : redirect,
+                   OTHER_PREFIX + "/sum" : sum }
 
 
 class TestServer(Thread):    
     def run(self):            
         print "Starting test server"
-        server_address = ('localhost', 9001)
+        server_address = ('localhost', TEST_PORT)
         httpd = HTTPServer(server_address, TestHandler)
         print "Serving from ", server_address
         httpd.serve_forever()
+
+
+def callBlobTest(proxy):    
+    size = 2**20    
+    big = "@" * size
+    r = proxy.echo(big)
+    assert big == r
+    
+    
+def redirectTest(proxy):
+    proxy2 = proxy.redirect(proxy.url)
+    s = proxy2.sum(654321, 123456)
+    assert s == 777777
    
 
 def callTest0(url):
@@ -161,8 +194,12 @@ def callTest0(url):
     srv.start()
     
     proxy = HttpProxy(url)
+        
+    msg = proxy.nothing()
+    assert None == msg
+      
     msg = proxy.hello()
-    assert message == msg
+    assert SECRET_MESSAGE == msg    
         
     try:
         proxy.askBitchy()
@@ -170,6 +207,9 @@ def callTest0(url):
     except Exception, e:
         # print traceback.format_exc() # debug
         pass
+    
+    callBlobTest(proxy)
+    # redirectTest(proxy) ################# TODO
         
     if False:
         print "Some performance measurements..."
@@ -203,21 +243,13 @@ def callTest1(url):
         print '.',
         a, b = 1902, 34
         assert (a - b) == proxy.subtract(a, b)
-        print '.',    
-        
-        # TODO Reproduce exception raising locally
-    #    try:
-    #        proxy.fault()
-    #        assert False # should not reach this line
-    #    except Exception, e:
-    #        pass
-    #        print "\nCaught exception: ", e # debug
-    #    print '.',
+        print '.',        
     except Exception, e:
         st = traceback.format_exc()
         if not warnConnectionRefused(e, url):
             print st
             raise e # re-thow
+
 
 if __name__ == "__main__":
     try:
@@ -230,8 +262,8 @@ if __name__ == "__main__":
         referenceTest()
         print '.',
         
-        callTest0("http://localhost:9001/")
-        callTest1("http://www.caucho.com/hessian/test/basic")
+        callTest0("http://localhost:%d/" % TEST_PORT)
+        # callTest1("http://www.caucho.com/hessian/test/basic")
         
         print "\nTests passed."
         

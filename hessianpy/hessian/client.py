@@ -19,12 +19,14 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import hessian
 import urllib
 import httplib
 from StringIO import StringIO
+import hessian
 
-__version__ = "0.3.3"
+
+__version__ = "0.3.4"
+
 
 class Method:
     "Encapsulates the method to be called"
@@ -48,7 +50,7 @@ class HttpProxy:
             raise IOError("Unsupported transport protocol '" + transport + "'")
         self.host, self.uri = urllib.splithost(uri)
     
-    def __invoke(self, method, params):        
+    def __invoke(self, method, params):
         s = StringIO()
         hessian.writeObject(hessian.WriteContext(s), \
                             (method, [], params), \
@@ -79,3 +81,13 @@ class HttpProxy:
     def __getattr__(self, name):
         # encapsulate the method call
         return Method(self.__invoke, name)
+    
+    def deref(object):
+        "Walk recursively and replace hessian.RemoteReference with live proxies"
+        assert False # todo
+        pass
+    
+    def drain(object):
+        "Walk recursively and replace HessiaReferences with hessian.RemoteReference"
+        assert False # todo
+        pass
