@@ -499,10 +499,17 @@ types.append(Reply)
 class RemoteReference:
     def __init__(self, url):
         self.url = url
-
+    
+    def __eq__(self, other):
+        return self.url == other.url
+        
 
 class Remote:
-    "Reference to a remote interface."
+    """Reference to a remote interface.
+    TODO: We could read and write interface types if necessary 
+    (add interface type name string to RemoteInterface).
+    This feaure is ignored for now."""
+    
     codes = ["r"]
     ptype = RemoteReference
     
@@ -511,20 +518,20 @@ class Remote:
         
     def read(self, stream, prefix):        
         assert prefix in self.codes
-        # skip typeNmae of remote interface        
-        self.typename_streamer.read(stream, stream.read(1))
+        # just skip typeName of remote interface (see comments for the class)
+        typeName = self.typename_streamer.read(stream, stream.read(1))
         # read url
-        url = self.url_streamer(stream, stream.read(1))
+        url = self.url_streamer.read(stream, stream.read(1))
         
-        # NOTE: non HTTP transports are not yet supported.
+        # NOTE: non HTTP transports are not (yet) supported.
         # TODO: (See comments to HttpProxy class)
         return RemoteReference(url)
     
     def write(self, stream, remote):
         "remote - RemoteReference-like object"
-        stream.write(self.codes[0])
-        typeName, url = remote
-        self.type_streamer.write(stream, typeName)
+        stream.write(self.codes[0])        
+        typeName = "Python" # see comments for the class
+        self.typename_streamer.write(stream, typeName)
         self.url_streamer.write(stream, remote.url)
 types.append(Remote)
 
