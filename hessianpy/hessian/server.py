@@ -51,18 +51,25 @@ class HessianHTTPRequestHandler(BaseHTTPRequestHandler):
             succeeded = False
             result = {"stackTrace" : stackTrace}
         
-        sio = StringIO()
-        hessian.Reply().write(
-                      hessian.WriteContext(sio),
-                      (headers, succeeded, result) )
-        reply = sio.getvalue()
-
+        try:
+            sio = StringIO()
+            hessian.Reply().write(
+                          hessian.WriteContext(sio),
+                          (headers, succeeded, result) )
+            reply = sio.getvalue()
+        except Exception:
+            stackTrace = traceback.format_exc()
+            # todo write this to logs
+            self.send_error(500, "Can not send response for '" + method + "'\n" + stackTrace)
+            return            
+        
         self.send_response(200, "OK")
         self.send_header("Content-type", "application/octet-stream")                
         self.send_header("Content-Length", str(len(reply)))
         self.end_headers()
         self.wfile.write(reply)
-
+        
+ 
 
 # ---------------------------------------------------------
 # Server usage example
