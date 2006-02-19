@@ -161,8 +161,8 @@ def callTest0(url):
     srv.start()
     
     proxy = HttpProxy(url)
-    message = proxy.hello()
-    assert message == message
+    msg = proxy.hello()
+    assert message == msg
         
     try:
         proxy.askBitchy()
