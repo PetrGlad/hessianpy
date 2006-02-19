@@ -82,11 +82,12 @@ def loopbackTest():
     loopBackTest(Array, [[[3]]])
     loopBackTest(Map, {})
     loopBackTest(Map, {1 : 2})
+    loopBackTest(Remote, RemoteReference("yo://yeshi/yama"))
     loopBackTestTyped(Xml, u"<hello who=\"Привет, мир!\"/>")
     
     loopBackTestTyped(Tuple, (), list)
     loopBackTestTyped(Tuple, (1,), list)
-    loopBackTestTyped(Tuple, ("equivalence", 1, {"":[]}), list)
+    loopBackTestTyped(Tuple, ("equivalence", 1, {"":[]}), list)    
 
 
 def serializeCallTest():    
@@ -151,8 +152,7 @@ class TestHandler(HessianHTTPRequestHandler):
         raise Exception("Go away!")
     
     def redirect(home_url):
-        assert False # todo
-        return client.HttpProxy(home_url + TestHandler.OTHER_PREFIX)
+        return hessian.RemoteReference(home_url + TestHandler.OTHER_PREFIX)
     
     def sum(a, b):
         return a + b
@@ -209,7 +209,9 @@ def callTest0(url):
         pass
     
     callBlobTest(proxy)
-    # redirectTest(proxy) ################# TODO
+    
+    # TODO (nedd to translate proxies to ref. objects and vice versa)
+    # redirectTest(proxy) 
         
     if False:
         print "Some performance measurements..."
@@ -226,7 +228,7 @@ def callTest0(url):
 
 def callTest1(url):
     try:
-        proxy = client.HttpProxy(url)
+        proxy = HttpProxy(url)
         
         proxy.nullCall()
         
