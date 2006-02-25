@@ -163,12 +163,12 @@ class TestHandler(HessianHTTPRequestHandler):
                    "askBitchy" : askBitchy,
                    "echo" : echo,
                    "redirect" : redirect,
-                   OTHER_PREFIX + "/sum" : sum }
+                   "sum" : sum }
 
 
 class TestServer(Thread):    
     def run(self):            
-        print "Starting test server"
+        print "\nStarting test server"
         server_address = ('localhost', TEST_PORT)
         httpd = HTTPServer(server_address, TestHandler)
         print "Serving from ", server_address
@@ -186,9 +186,13 @@ def redirectTest(proxy):
     proxy2 = proxy.redirect(proxy.url)
     s = proxy2.sum(654321, 123456)
     assert s == 777777
-   
+    
+    p = proxy    
+    for k in range(3): p = p.echo(p)
+    assert p.hello() == SECRET_MESSAGE
+  
 
-def callTest0(url):
+def callTestLocal(url):
     srv = TestServer()
     srv.setDaemon(True)
     srv.start()
@@ -211,7 +215,7 @@ def callTest0(url):
     callBlobTest(proxy)
     
     # TODO (nedd to translate proxies to ref. objects and vice versa)
-    # redirectTest(proxy) 
+    redirectTest(proxy) 
         
     if False:
         print "Some performance measurements..."
@@ -226,7 +230,7 @@ def callTest0(url):
     srv = None    
 
 
-def callTest1(url):
+def callTestPublic(url):
     try:
         proxy = HttpProxy(url)
         
@@ -264,8 +268,8 @@ if __name__ == "__main__":
         referenceTest()
         print '.',
         
-        callTest0("http://localhost:%d/" % TEST_PORT)
-        # callTest1("http://www.caucho.com/hessian/test/basic")
+        callTestLocal("http://localhost:%d/" % TEST_PORT)
+        callTestPublic("http://www.caucho.com/hessian/test/basic")
         
         print "\nTests passed."
         

@@ -43,6 +43,8 @@ class HttpProxy:
      TODO: support HTTPS (and perhaps other transports - why not ssh?).
     """
     
+    typename = "client.HttpProxy"
+    
     def __init__(self, url):
         self.url = url
         transport, uri = urllib.splittype(url)    
@@ -52,7 +54,7 @@ class HttpProxy:
     
     def __invoke(self, method, params):
         s = StringIO()
-        hessian.writeObject(hessian.WriteContext(s), \
+        hessian.writeObject(hessian.WriteContext(s, self.drain), \
                             (method, [], params), \
                             hessian.Call())
         request = s.getvalue()
@@ -70,7 +72,7 @@ class HttpProxy:
 
         inStream = StringIO(response.read())
         # print "\nGot buffer:[" + inStream.buf + "]" # debug
-        ctx = hessian.ParseContext(inStream)
+        ctx = hessian.ParseContext(inStream, self.deref)
         (headers, status, value) = hessian.Reply().read(ctx, ctx.read(1))        
         # print "Call result:", headers, status, value # debug
         if not status:
@@ -82,12 +84,21 @@ class HttpProxy:
         # encapsulate the method call
         return Method(self.__invoke, name)
     
+    @staticmethod    
     def deref(object):
-        "Walk recursively and replace hessian.RemoteReference with live proxies"
-        assert False # todo
-        pass
+        "Replace hessian.RemoteReference with live proxies"
+        if hasattr(object, "typename"):
+            if object.typename == "hessian.RemoteReference":
+                return HttpProxy(object.url)
+        else:
+            return object
     
+    @staticmethod    
     def drain(object):
-        "Walk recursively and replace HessiaReferences with hessian.RemoteReference"
-        assert False # todo
-        pass
+        "Replace Hessian proxies with hessian.RemoteReference"
+        if hasattr(object, "typename") and object.typename == "client.HttpProxy":
+            return hessian.RemoteReference(object.url)
+        else:
+            return object
+
+   

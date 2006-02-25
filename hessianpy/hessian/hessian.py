@@ -20,6 +20,7 @@
 #   limitations under the License.
 #
 from struct import pack, unpack
+from types import StringType
 
 
 types = []
@@ -35,7 +36,7 @@ class HessianError(Exception):
 class ValueStreamer:
     "Describes contract for value serializers"
     
-    codes = None  # type code list
+    codes = None # type code list
     ptype = None # Python type of value
     
     def read(self, stream):
@@ -47,20 +48,26 @@ class ValueStreamer:
         assert False # abstract
 
 
-def readObject(stream):
-    prefix = stream.read(1)
-    return readObjectByPrefix(stream, prefix)
+def readObject(ctx):
+    prefix = ctx.read(1)
+    return readObjectByPrefix(ctx, prefix)
 
 
-def readObjectByPrefix(stream, prefix):
-    return CODE_MAP[prefix].read(stream, prefix)
+def readObjectByPrefix(ctx, prefix):    
+    return ctx.post(CODE_MAP[prefix].read(ctx, prefix))
 
 
-def writeObject(stream, value, htype):
+def writeObject(ctx, value, htype):
     "Write value with specified type"
-    if htype is None: # autodetect type
-        htype = TYPE_MAP[type(value)]
-    htype.write(stream, value)       
+    value = ctx.pre(value)
+    if htype is None: # then autodetect type
+        if hasattr(value, "typename"):
+            # See RemoteReference for example
+            htype = TYPE_MAP[value.typename] 
+        else:
+            htype = TYPE_MAP[type(value)]    
+    assert not htype is None
+    htype.write(ctx, value)       
 
 
 def readShort(stream):
@@ -82,14 +89,14 @@ def writeVersion(stream):
 
     
 class SimpleValue:
-    "Single valued types (none)"
-    def read(self, stream, prefix):
+    "Single valued types (None)"
+    def read(self, ctx, prefix):
         assert prefix in self.codes
         return self.value
     
-    def write(self, stream, value):
+    def write(self, ctx, value):
         assert value == self.value
-        stream.write(self.codes[0])
+        ctx.write(self.codes[0])
 
 
 class Null(SimpleValue):
@@ -103,30 +110,30 @@ class Bool:
     codes = ["F", "T"]
     ptype = bool
     
-    def read(self, stream, prefix):
+    def read(self, ctx, prefix):
         assert prefix in self.codes
         return prefix == self.codes[1]
     
-    def write(self, stream, value):
+    def write(self, ctx, value):
         assert type(value) == bool
         k = 0
         if value: k = 1
-        stream.write(self.codes[k])
+        ctx.write(self.codes[k])
 types.append(Bool)
 
 
 class BasicInt:
     codes = []
     
-    def read(self, stream, prefix):
+    def read(self, ctx, prefix):
         assert prefix in self.codes
-        dat = stream.read(4)
+        dat = ctx.read(4)
         assert len(dat) == 4
         return unpack(">l", dat)[0]
     
-    def write(self, stream, value):
-        stream.write(self.codes[0])
-        stream.write(pack(">l", value))
+    def write(self, ctx, value):
+        ctx.write(self.codes[0])
+        ctx.write(pack(">l", value))
 
    
 class Int(BasicInt):
@@ -139,13 +146,13 @@ class Long:
     codes = ["L"]
     ptype = long
     
-    def read(self, stream, prefix):
+    def read(self, ctx, prefix):
         assert prefix in self.codes
-        return unpack('>q', stream.read(8))[0]
+        return unpack('>q', ctx.read(8))[0]
     
-    def write(self, stream, value):
-        stream.write(self.codes[0])
-        stream.write(pack(">q", value))
+    def write(self, ctx, value):
+        ctx.write(self.codes[0])
+        ctx.write(pack(">q", value))
 types.append(Long)
 
 
@@ -153,27 +160,27 @@ class Double:
     codes = ["D"]
     ptype = float
 
-    def read(self, stream, prefix):
+    def read(self, ctx, prefix):
         assert prefix in self.codes
-        return unpack('>d', stream.read(8))[0]
+        return unpack('>d', ctx.read(8))[0]
         
-    def write(self, stream, value):
-        stream.write(self.codes[0])
-        stream.write(pack(">d", value))
+    def write(self, ctx, value):
+        ctx.write(self.codes[0])
+        ctx.write(pack(">d", value))
 types.append(Double)
 
 
 class ShortSequence:
     codes = []
 
-    def read(self, stream, prefix):
-        count = readShort(stream)
-        return stream.read(count)
+    def read(self, ctx, prefix):
+        count = readShort(ctx)
+        return ctx.read(count)
 
-    def write(self, stream, value):
-        stream.write(self.codes[0])
-        writeShort(stream, len(value))
-        stream.write(value)    
+    def write(self, ctx, value):
+        ctx.write(self.codes[0])
+        writeShort(ctx, len(value))
+        ctx.write(value)    
 
 
 class Chunked(ShortSequence):
@@ -182,28 +189,30 @@ class Chunked(ShortSequence):
 
     readChunk = ShortSequence.read # shortcut    
 
-    def read(self, stream, prefix):
+    def read(self, ctx, prefix):
         result = "";
         while (prefix == self.codes[1]):
-            result += self.readChunk(stream, self.codes[1])
-            prefix = stream.read(1)
+            result += self.readChunk(ctx, self.codes[1])
+            prefix = ctx.read(1)
         assert prefix == self.codes[0]
-        result += self.readChunk(stream, prefix)
+        result += self.readChunk(ctx, prefix)
         return result
 
-    def write(self, stream, value):
-        chunk_size = 2**14
+    def write(self, ctx, value):
+        
+        chunk_size = 2**10
+        
         length = len(value)
         pos = 0
         while pos < length - chunk_size:
-            stream.write(self.codes[1])
-            writeShort(stream, chunk_size)
-            stream.write(value[pos : pos + chunk_size])
+            ctx.write(self.codes[1])
+            writeShort(ctx, chunk_size)
+            ctx.write(value[pos : pos + chunk_size])
             pos += chunk_size
         # write last chunk
-        stream.write(self.codes[0])
-        writeShort(stream, length - pos)
-        stream.write(value[pos : ])        
+        ctx.write(self.codes[0])
+        writeShort(ctx, length - pos)
+        ctx.write(value[pos : ])
     
     
 class String(Chunked):
@@ -245,36 +254,36 @@ class Array:
     type_streamer = TypeName()
     length_streamer = Length()
     
-    def read(self, stream, prefix):
+    def read(self, ctx, prefix):
         assert prefix == "V"
-        prefix = stream.read(1)
+        prefix = ctx.read(1)
         if prefix in self.type_streamer.codes:
-            self.type_streamer.read(stream, prefix)
-            prefix = stream.read(1)
-        count = self.length_streamer.read(stream, prefix)        
-        prefix = stream.read(1)        
+            self.type_streamer.read(ctx, prefix)
+            prefix = ctx.read(1)
+        count = self.length_streamer.read(ctx, prefix)        
+        prefix = ctx.read(1)        
         result = []
-        stream.referencedObjects.append(result)        
+        ctx.referencedObjects.append(result)        
         while prefix != "z":        
-            result.append(readObjectByPrefix(stream, prefix))
-            prefix = stream.read(1)
+            result.append(readObjectByPrefix(ctx, prefix))
+            prefix = ctx.read(1)
         assert count == len(result)
         assert prefix == "z"
         return result
 
-    def _write(self, stream, value):
-        stream.write(self.codes[0])
+    def _write(self, ctx, value):
+        ctx.write(self.codes[0])
         
         # we'll not write type marker because we may only guess it
         # self.type_streamer.write(stream, "something")
         
-        self.length_streamer.write(stream, len(value))
+        self.length_streamer.write(ctx, len(value))
         for o in value:
-            writeObject(stream, o, None)
-        stream.write("z")
+            writeObject(ctx, o, None)
+        ctx.write("z")
         
-    def write(self, stream, value):
-        writeReferenced(stream, self._write, value)
+    def write(self, ctx, value):
+        writeReferenced(ctx, self._write, value)
 types.append(Array)
 
 
@@ -291,30 +300,30 @@ class Map:
 
     type_streamer = TypeName()
     
-    def read(self, stream, prefix):
+    def read(self, ctx, prefix):
         assert prefix in self.codes
-        prefix = stream.read(1)
+        prefix = ctx.read(1)
         if prefix in TypeName.codes:
-            self.type_streamer.read(stream, prefix)
-            prefix = stream.read(1)
+            self.type_streamer.read(ctx, prefix)
+            prefix = ctx.read(1)
         result = {}
-        stream.referencedObjects.append(result)        
+        ctx.referencedObjects.append(result)        
         while prefix != "z":
-            key = readObjectByPrefix(stream, prefix)            
-            value = readObject(stream)
+            key = readObjectByPrefix(ctx, prefix)            
+            value = readObject(ctx)
             result[key] = value
-            prefix = stream.read(1)
+            prefix = ctx.read(1)
         return result
     
-    def _write(self, stream, mapping):
-        stream.write(self.codes[0])
+    def _write(self, ctx, mapping):
+        ctx.write(self.codes[0])
         for k, v in mapping.items():
-            writeObject(stream, k, None)
-            writeObject(stream, v, None)
-        stream.write("z")
+            writeObject(ctx, k, None)
+            writeObject(ctx, v, None)
+        ctx.write("z")
 
-    def write(self, stream, value):
-        writeReferenced(stream, self._write, value)
+    def write(self, ctx, value):
+        writeReferenced(ctx, self._write, value)
 types.append(Map)    
 
 
@@ -323,12 +332,12 @@ class Ref(BasicInt):
     (allows sharing objects in a map or a list) """
     codes = ["R"]
 
-    def read(self, stream, prefix):
-        refId = BasicInt.read(self, stream, prefix)
-        return stream.referencedObjects[refId]
+    def read(self, ctx, prefix):
+        refId = BasicInt.read(self, ctx, prefix)
+        return ctx.referencedObjects[refId]
 
-    def write(self, stream, objId):
-        BasicInt.write(self, stream, objId)
+    def write(self, ctx, objId):
+        BasicInt.write(self, ctx, objId)
 types.append(Ref)
 
 
@@ -339,21 +348,21 @@ class Header:
     title_streamer = ShortSequence()
     title_streamer.codes = codes
     
-    def read(self, stream, prefix):
+    def read(self, ctx, prefix):
         assert prefix in self.codes
         # read header title
-        title = self.title_streamer.read(stream, prefix)
+        title = self.title_streamer.read(ctx, prefix)
         assert len(title) > 0
         # read header value
-        value = readObject(stream)        
+        value = readObject(ctx)        
         return (title, value)
     
-    def write(self, stream, header):
+    def write(self, ctx, header):
         title, value = header
         # write title
-        self.title_streamer.write(stream, title)
+        self.title_streamer.write(ctx, title)
         # write value
-        writeObject(stream, value, None)
+        writeObject(ctx, value, None)
 types.append(Header)
 
 
@@ -374,49 +383,49 @@ class Call:
     method_streamer = Method()
     header_streamer = Header()
     
-    def read(self, stream, prefix):
+    def read(self, ctx, prefix):
         assert prefix == self.codes[0]
-        readVersion(stream)
-        prefix = stream.read(1)
+        readVersion(ctx)
+        prefix = ctx.read(1)
         
         # read headers
         headers = []
         while prefix == self.header_streamer.codes[0]:
-            headers.append(self.header_streamer.read(stream, prefix))
-            prefix = stream.read(1)
+            headers.append(self.header_streamer.read(ctx, prefix))
+            prefix = ctx.read(1)
             
         # read method
-        method = self.method_streamer.read(stream, prefix)
-        prefix = stream.read(1)
+        method = self.method_streamer.read(ctx, prefix)
+        prefix = ctx.read(1)
         
         # read params
         params = []        
         while prefix != "z":
-            params.append(readObjectByPrefix(stream, prefix))
-            prefix = stream.read(1)
+            params.append(readObjectByPrefix(ctx, prefix))
+            prefix = ctx.read(1)
             
         return (method, headers, params)
 
-    def write(self, stream, value):
+    def write(self, ctx, value):
         # headers can be None or map of headers (header title->value)
         method, headers, params = value
-        stream.write(self.codes[0])
-        writeVersion(stream)
+        ctx.write(self.codes[0])
+        writeVersion(ctx)
         
         # write headers
         if headers != None:
             for h in headers:
-                self.header_streamer.write(stream, h)
+                self.header_streamer.write(ctx, h)
                 
         # write method
-        self.method_streamer.write(stream, method)
+        self.method_streamer.write(ctx, method)
         
         # write params
         if params != None:
             for v in params:
-                writeObject(stream, v, None)
+                writeObject(ctx, v, None)
                 
-        stream.write("z");
+        ctx.write("z");
 types.append(Call)
 
 
@@ -424,23 +433,23 @@ class Fault:
     "Remote_call error_description."
     codes = ["f"]
     
-    def read(self, stream, prefix):
+    def read(self, ctx, prefix):
         assert prefix in self.codes
         result = {}
-        prefix = stream.read(1)
+        prefix = ctx.read(1)
         while prefix != "z":
-            k = readObjectByPrefix(stream, prefix)
-            prefix = stream.read(1)
-            v = readObjectByPrefix(stream, prefix)
-            prefix = stream.read(1)
+            k = readObjectByPrefix(ctx, prefix)
+            prefix = ctx.read(1)
+            v = readObjectByPrefix(ctx, prefix)
+            prefix = ctx.read(1)
             result[k] = v
         return result
     
-    def write(self, stream, fault):
-        stream.write(self.codes[0])
+    def write(self, ctx, fault):
+        ctx.write(self.codes[0])
         for k, v in fault.items():
-            writeObject(stream, k, None)
-            writeObject(stream, v, None)            
+            writeObject(ctx, k, None)
+            writeObject(ctx, v, None)            
 types.append(Fault)
 
 
@@ -457,49 +466,53 @@ class Reply:
     header_streamer = Header()
     fault_streamer = Fault()
     
-    def read(self, stream, prefix):
+    def read(self, ctx, prefix):
         assert prefix in self.codes[0]
         # parse header 'r' x01 x00 ... 'z'
 
-        readVersion(stream)        
-        prefix = stream.read(1)
+        readVersion(ctx)        
+        prefix = ctx.read(1)
         # parse headers
         headers = []
         while prefix in self.header_streamer.codes:
             headers.append(self.header_streamer.read())
-            prefix = stream.read(1)           
+            prefix = ctx.read(1)           
 
         succseeded = not prefix in self.fault_streamer.codes
         
         if succseeded:
-            result = readObjectByPrefix(stream, prefix)
-            prefix = stream.read(1)
+            result = readObjectByPrefix(ctx, prefix)
+            prefix = ctx.read(1)
             if prefix != 'z':
                 raise "No closing marker in reply"
         else:
-            result = self.fault_streamer.read(stream, prefix)
+            result = self.fault_streamer.read(ctx, prefix)
             # closing "z" is already read by Fault.read
         
         return (headers, succseeded, result)
 
-    def write(self, stream, reply):
+    def write(self, ctx, reply):
         (headers, succeeded, result) = reply
-        stream.write(self.codes[0])
-        writeVersion(stream)
+        ctx.write(self.codes[0])
+        writeVersion(ctx)
         for h in headers:
-            self.header_streamer.write(stream, h)
+            self.header_streamer.write(ctx, h)
         if succeeded:
-            writeObject(stream, result, None)
+            writeObject(ctx, result, None)
         else:
-            self.fault_streamer.write(stream, result)
-        stream.write("z")
+            self.fault_streamer.write(ctx, result)
+        ctx.write("z")
 types.append(Reply)
 
 
 class RemoteReference:
+
+    # class instances do not have class names (AFAIK) so we need this hack
+    typename = "hessian.RemoteReference"
+    
     def __init__(self, url):
         self.url = url
-    
+
     def __eq__(self, other):
         return self.url == other.url
         
@@ -511,28 +524,28 @@ class Remote:
     This feaure is ignored for now."""
     
     codes = ["r"]
-    ptype = RemoteReference
+    ptype = RemoteReference.typename
     
     typename_streamer = TypeName()
     url_streamer = String()
         
-    def read(self, stream, prefix):        
+    def read(self, ctx, prefix):        
         assert prefix in self.codes
         # just skip typeName of remote interface (see comments for the class)
-        typeName = self.typename_streamer.read(stream, stream.read(1))
+        typeName = self.typename_streamer.read(ctx, ctx.read(1))
         # read url
-        url = self.url_streamer.read(stream, stream.read(1))
+        url = self.url_streamer.read(ctx, ctx.read(1))
         
         # NOTE: non HTTP transports are not (yet) supported.
-        # TODO: (See comments to HttpProxy class)
+        # TODO: (See comments to HttpProxy class)        
         return RemoteReference(url)
     
-    def write(self, stream, remote):
-        "remote - RemoteReference-like object"
-        stream.write(self.codes[0])        
+    def write(self, ctx, remote):
+        "remote - RemoteReference-like object"        
+        ctx.write(self.codes[0])        
         typeName = "Python" # see comments for the class
-        self.typename_streamer.write(stream, typeName)
-        self.url_streamer.write(stream, remote.url)
+        self.typename_streamer.write(ctx, typeName)
+        self.url_streamer.write(ctx, remote.url)
 types.append(Remote)
 
 
@@ -560,20 +573,28 @@ def makeTypeMaps(types):
 CODE_MAP, TYPE_MAP = makeTypeMaps(types)
 
 
-class ParseContext:    
-    def __init__(self, stream):
+class ParseContext:
+    def __init__(self, stream, post = lambda x: x):
+        """post - postprocessing function for deserialized object.
+        Note: not all streamers use self.post
+        """
         self.referencedObjects = [] # objects that may be referenced by Ref
         self.objectIds = {}
         self.stream = stream        
         self.read = stream.read
+        self.post = post
 
 
 class WriteContext:
-    def __init__(self, stream):
+    def __init__(self, stream, pre = lambda x: x):
+        """pre - preprocessing function for object being written. 
+        Note: not all streamers use self.pre
+        """
         self.objectIds = {} # is used for back references
         self.count = 0
         self.stream = stream
         self.write = stream.write
+        self.pre = pre
         
     def getRefId(self, obj):
         "Return numeric ref id if object has been already met"

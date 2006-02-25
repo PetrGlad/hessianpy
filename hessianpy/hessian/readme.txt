@@ -8,6 +8,12 @@ See hello.py for sample code.
 
 
 	RELEASE NOTES
+
+v0.4 2006-02-25
+	First "beta" version. I think, tests now cover all significant parts of protocol.
+	1. References to remote interfaces now supported
+	2. Support for splitted sequences tested
+	3. Minor code cleanups
 	
 v0.3.3 2006-02-18
 	1. Remote exception handling fixed, self-hosted remote call tests added	

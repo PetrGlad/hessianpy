@@ -1,4 +1,2 @@
-1. Test chunked reads/writes ("BLOB" handling)
-2. Test remote interface references
-3. Support HTTP authorization
-4. Support HTTPS
+1. Support HTTP authorization
+2. Support HTTPS

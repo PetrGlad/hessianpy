@@ -40,6 +40,7 @@ class HessianHTTPRequestHandler(BaseHTTPRequestHandler):
             return
       
         if not self.message_map.has_key(method):
+            # print "Message map:", self.message_map # debug
             self.send_error(500, "Method '" + method + "' is not found")
             return
         
@@ -68,7 +69,6 @@ class HessianHTTPRequestHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(reply)))
         self.end_headers()
         self.wfile.write(reply)
-        
  
 
 # ---------------------------------------------------------
