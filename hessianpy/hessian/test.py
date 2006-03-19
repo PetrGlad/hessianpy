@@ -177,7 +177,7 @@ class TestServer(Thread):
 
 def callBlobTest(proxy):    
     size = 2**20    
-    big = "@" * size
+    big = "*" * size
     r = proxy.echo(big)
     assert big == r
     
@@ -197,12 +197,13 @@ def callTestLocal(url):
     srv.setDaemon(True)
     srv.start()
     
-    proxy = HttpProxy(url)
+    proxy = HessianProxy(url)
         
     msg = proxy.nothing()
     assert None == msg
       
     msg = proxy.hello()
+    print msg, "=?=", SECRET_MESSAGE
     assert SECRET_MESSAGE == msg    
         
     try:
@@ -212,9 +213,7 @@ def callTestLocal(url):
         # print traceback.format_exc() # debug
         pass
     
-    callBlobTest(proxy)
-    
-    # TODO (nedd to translate proxies to ref. objects and vice versa)
+    callBlobTest(proxy)    
     redirectTest(proxy) 
         
     if False:
@@ -224,7 +223,7 @@ def callTestLocal(url):
         for i in range(count):
             proxy.hello()
         fin = time()
-        print "One call takes", 1000 * (fin - start) / count, "mSec."        
+        print "One call takes", 1000.0 * (fin - start) / count, "mSec."        
         
     # TODO: How can we kill server while it's waiting on socket?
     srv = None    
@@ -232,7 +231,7 @@ def callTestLocal(url):
 
 def callTestPublic(url):
     try:
-        proxy = HttpProxy(url)
+        proxy = HessianProxy(url)
         
         proxy.nullCall()
         

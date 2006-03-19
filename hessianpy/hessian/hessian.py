@@ -37,7 +37,7 @@ class ValueStreamer:
     "Describes contract for value serializers"
     
     codes = None # type code list
-    ptype = None # Python type of value
+    ptype = None # Python type of value (or type name string if it is class)
     
     def read(self, stream):
         "Init value from Stream"
@@ -64,7 +64,7 @@ def writeObject(ctx, value, htype):
         if hasattr(value, "typename"):
             # See RemoteReference for example
             htype = TYPE_MAP[value.typename] 
-        else:
+        else:            
             htype = TYPE_MAP[type(value)]    
     assert not htype is None
     htype.write(ctx, value)       
@@ -469,7 +469,6 @@ class Reply:
     def read(self, ctx, prefix):
         assert prefix in self.codes[0]
         # parse header 'r' x01 x00 ... 'z'
-
         readVersion(ctx)        
         prefix = ctx.read(1)
         # parse headers
@@ -534,10 +533,7 @@ class Remote:
         # just skip typeName of remote interface (see comments for the class)
         typeName = self.typename_streamer.read(ctx, ctx.read(1))
         # read url
-        url = self.url_streamer.read(ctx, ctx.read(1))
-        
-        # NOTE: non HTTP transports are not (yet) supported.
-        # TODO: (See comments to HttpProxy class)        
+        url = self.url_streamer.read(ctx, ctx.read(1))        
         return RemoteReference(url)
     
     def write(self, ctx, remote):
@@ -610,6 +606,5 @@ if __name__ == "__main__":
     print "Registered types:"
     for t in types:
         print t, 
-        for c in t.codes:
-            print c, 
+        for c in t.codes: print c, 
         print
