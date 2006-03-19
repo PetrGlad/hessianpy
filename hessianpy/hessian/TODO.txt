@@ -1,2 +1,1 @@
-1. Support HTTP authorization
-2. Support HTTPS
+1. Write tests for HTTP authorization and HTTPS
