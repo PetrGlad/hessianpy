@@ -6,13 +6,26 @@ protocol introduction. Protocol specification is at
 http://www.caucho.com/resin-3.0/protocols/hessian-1.0-spec.xtp
 See hello.py for sample code.
 
+Note that (optional) HTTPS test requires OpenSSL library (see http://openssl.org) 
+and wrapper pyOpenSSL (see http://pyopenssl.sourceforge.net).
+Note that HTTPS support in Python may not be enabled by default 
+and you may need to add it separately (namely PYTHON_HOME/DLLs/_ssl.pyd).
+
+
+	INSTALLATION
+
+Nothing special: just unpack this library into Python's lib directory or,
+if you prefer, include directory with unpacked library into your PYTHON_PATH.
+
 
 	RELEASE NOTES
 
-
-v0.5 2006-03-19
-	1. Added support for HTTP authorization and HTTPS (Contributed by Bernd Stolle)
-		
+v0.5 2006-04-09
+	1. Integrated support for HTTP authorization and HTTPS (Contributed by Bernd Stolle)
+	2. Added simple HTTPS test server. This server requires OpenSSL wrapper pyOpenSSL 
+	(see http://pyopenssl.sourceforge.net). Note: if you need this wrapper under Windows 
+	you may need to tweak wrapper's source a little (see 'patches' section in pyOpenSSL 
+	project's page at sourceforge.net)
 
 v0.4 2006-02-25
 	First "beta" version. I think, tests now cover all significant parts of protocol.
@@ -20,12 +33,10 @@ v0.4 2006-02-25
 	2. Support for splitted sequences tested
 	3. Minor code cleanups
 	
-	
 v0.3.3 2006-02-18
 	1. Remote exception handling fixed, self-hosted remote call tests added	
 	2. Simple RPC server added. This server is intended for testing purposes.
 	3. Note: TODO has changed
-
 
 v0.3.2 2006-01-21
 	1. Tuple serialization added (it is serialized as an array)
@@ -34,7 +45,6 @@ v0.3.2 2006-01-21
 	2.1 Although one apparent exception handling bug fixed, can not
 verify it because call to BasicAPI.fault() hangs (can not get
 response from server).
-
 	
 v0.3.1 2005-12-11
 	1. Added support for XML objects (as plain strings) 
@@ -42,7 +52,6 @@ v0.3.1 2005-12-11
 	3. Got rid of memstream.py - now standard StringIO is used.
 Note that only plain HTTP is supported as a transport. The library still lacks 
 server-side functionality which is necessary to test all patrs of the library.
-
 
 v0.3 2005-11-21
 Initial implementation. It does not support remote references. Look for
@@ -55,12 +64,17 @@ implementation would require some kind of HTTP server.
 
 	FILES
 
+client.py - client proxy code
 licence.txt - contains distribtution license.
 hello.py - contains sample client code.
-client.py - client proxy code
-server.py - simple RPC server
 hessian.py - serializing/deserializing code
-test.py - tests for this library
+runtest - command line that runs test
+server.py - simple HTTP RPC server (used in testing)
+secureServer.py - simple HTTPS RPC server (used in testing)
+server.pem - sample OpenSSL keypair (used in testing)
+test/test.py - tests for this library
+testSecure/test.py - HTTPS tests for this library
+transports.py - transport protocols
 
 
 	WHY

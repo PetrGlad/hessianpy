@@ -5,6 +5,10 @@
 # Protocol specification can be found here:
 # http://www.caucho.com/resin-3.0/protocols/hessian-1.0-spec.xtp
 #
+# HTTPS pieces ofcode is based on receipe "Simple HTTP server supporting 
+# SSL secure communications" by Sébastien Martini published at ActiveState 
+# Programmer Network.
+#
 # Copyright 2006 Petr Gladkikh (batyi at sourceforge net)
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +28,7 @@ import hessian
 from StringIO import StringIO
 import traceback
 
+__revision__ = "$Rev$"
 
 class HessianHTTPRequestHandler(BaseHTTPRequestHandler):    
     """Subclasses should create clss's member message_map which maps method 
@@ -36,7 +41,7 @@ class HessianHTTPRequestHandler(BaseHTTPRequestHandler):
             ctx = hessian.ParseContext(self.rfile)
             (method, headers, params) = hessian.Call().read(ctx, ctx.read(1))
         except Exception, e:
-            self.send_error(500, "Can not parse call request. error: " + e)
+            self.send_error(500, "Can not parse call request. error: " + `e`)
             return
       
         if not self.message_map.has_key(method):
@@ -69,7 +74,7 @@ class HessianHTTPRequestHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(reply)))
         self.end_headers()
         self.wfile.write(reply)
- 
+        
 
 # ---------------------------------------------------------
 # Server usage example

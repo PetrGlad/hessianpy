@@ -1,1 +1,7 @@
-1. Write tests for HTTP authorization and HTTPS
+1. Transparent exception handling across remote call would be desirable 
+(translate or reformat returned error message into usual Python stack trace)
+
+2. Try using urllib2 instead of hand-crafted transport support 
+and see what happens (code complexity, compatibility, performance etc.)
+
+3. Use distutils for distribution as there is many files now

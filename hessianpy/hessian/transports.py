@@ -32,10 +32,12 @@ import base64
 import httplib
 from StringIO import StringIO
 
-__version__ = "0.5.0"
 __revision__ = "$Rev$"
+__version__ = "0.5.0"
+
 
 AUTH_BASIC = "basic"
+
 
 def getTransportForProtocol(protocol):
     """ returns the appropriate transport for a protocol identifier

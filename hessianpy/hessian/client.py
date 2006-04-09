@@ -26,13 +26,12 @@ import transports
 import urlparse
 from StringIO import StringIO
 
-__version__ = "0.5.0"
-
+__revision__ = "$Rev$"
 
 def split_host_and_port(host_and_port):
     result = host_and_port.split(":", 1)
     if len(result) == 2:
-        return (result[0], result[1])
+        return (result[0], int(result[1]))
     else:
         # Use default port here until someone comes up with a better idea
         # --> Need a map protocol_schema->default_port ?
@@ -63,7 +62,7 @@ class HessianProxy:
         protocol = url_tuple[0]
         host_with_port = url_tuple[1]
         path = "%s?%s" % (url_tuple[2], url_tuple[4])
-        host, port = split_host_and_port(host_with_port)
+        host, port = split_host_and_port(host_with_port)        
         
         self._authdata = authdata
         transport_class = transports.getTransportForProtocol(protocol)

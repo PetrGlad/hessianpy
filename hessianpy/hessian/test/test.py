@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 #
-# Hessian protocol implementation
+# Hessian protocol implementation test
 #
 # Protocol specification can be found here
 # http://www.caucho.com/resin-3.0/protocols/hessian-1.0-spec.xtp
@@ -29,6 +29,9 @@ from StringIO import StringIO
 from time import time
 import traceback
 from threading import Thread
+
+
+__revision__ = "$Rev$"
 
     
 def loopBackTest(classRef, value):
@@ -65,7 +68,7 @@ def loopBackTestTyped(classRef, value, converter = None):
 
 
 def loopbackTest():
-    loopBackTest(Null, None)
+    loopBackTest(hessian.Null, None)
     loopBackTest(Bool, True)
     loopBackTest(Bool, False)    
     loopBackTest(Int, 12343)
@@ -158,17 +161,17 @@ class TestHandler(HessianHTTPRequestHandler):
         return a + b
     
     message_map = {
-                   "nothing" : nothing,
-                   "hello" : hello,
-                   "askBitchy" : askBitchy,
-                   "echo" : echo,
-                   "redirect" : redirect,
+                   "nothing" : nothing, 
+                   "hello" : hello, 
+                   "askBitchy" : askBitchy, 
+                   "echo" : echo, 
+                   "redirect" : redirect, 
                    "sum" : sum }
 
 
 class TestServer(Thread):    
-    def run(self):            
-        print "\nStarting test server"
+    def run(self):
+        print "\nStarting test HTTP server"
         server_address = ('localhost', TEST_PORT)
         httpd = HTTPServer(server_address, TestHandler)
         print "Serving from ", server_address
@@ -203,7 +206,6 @@ def callTestLocal(url):
     assert None == msg
       
     msg = proxy.hello()
-    print msg, "=?=", SECRET_MESSAGE
     assert SECRET_MESSAGE == msg    
         
     try:
@@ -236,19 +238,19 @@ def callTestPublic(url):
         proxy.nullCall()
         
         assert "Hello, world" == proxy.hello()
-        print '.',
+        print '.', 
         o = {1:"one", 2:"two"}
         assert o == proxy.echo(o)
-        print '.',
+        print '.', 
         o = (-1, -2)
         assert list(o) == proxy.echo(o)
-        print '.',
+        print '.', 
         o = ["S-word", "happen-s"]
         assert o == proxy.echo(o)
-        print '.',
+        print '.', 
         a, b = 1902, 34
         assert (a - b) == proxy.subtract(a, b)
-        print '.',        
+        print '.', 
     except Exception, e:
         st = traceback.format_exc()
         if not warnConnectionRefused(e, url):
@@ -256,19 +258,31 @@ def callTestPublic(url):
             raise e # re-thow
 
 
+def sslTest():
+    try:
+        import OpenSSL
+    except Exception, e:
+        print "Warning: No OpenSSL module. SSL will not be tested."
+        return
+    
+    import testSecure
+    testSecure.testHttps()
+     
+
 if __name__ == "__main__":
     try:
         loopbackTest()
-        print '.',
+        print '.', 
         serializeCallTest()
-        print '.',
+        print '.', 
         serializeReplyTest()
-        print '.',
+        print '.', 
         referenceTest()
-        print '.',
+        print '.', 
         
         callTestLocal("http://localhost:%d/" % TEST_PORT)
         callTestPublic("http://www.caucho.com/hessian/test/basic")
+        sslTest()
         
         print "\nTests passed."
         

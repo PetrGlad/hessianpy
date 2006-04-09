@@ -22,6 +22,7 @@
 from struct import pack, unpack
 from types import StringType
 
+__revision__ = "$Rev$"
 
 types = []
 CODE_MAP = {}
