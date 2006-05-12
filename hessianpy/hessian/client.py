@@ -1,4 +1,4 @@
-# -*- coding: cp1251 -*-
+# -*- coding: UTF-8 -*-
 #
 # Hessian protocol implementation
 # This file contains client proxy code.
@@ -75,6 +75,9 @@ class HessianProxy:
                             hessian.WriteContext(request, self.drain), 
                             (method, [], params), 
                             hessian.Call())
+        
+        # print request.getvalue() # debug 
+        
         response = self._transport.request(request)
 
         # this will retain same credential for all interfaces we are working with
@@ -99,7 +102,7 @@ class HessianProxy:
         else:
            return obj
                                                        
-    @staticmethod    
+    @staticmethod
     def drain(obj):
         "Replace Hessian proxy with hessian.RemoteReference"
         if hasattr(obj, "typename") and obj.typename == "client.HessianProxy":

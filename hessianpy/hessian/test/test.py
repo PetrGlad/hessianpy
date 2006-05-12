@@ -21,9 +21,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from hessian import *
-from client import *
-from server import HessianHTTPRequestHandler
+from hessian.hessian import *
+from hessian.client import *
+from hessian.server import HessianHTTPRequestHandler
 from BaseHTTPServer import HTTPServer
 from StringIO import StringIO
 from time import time
@@ -77,7 +77,7 @@ def loopbackTest():
     loopBackTest(Double, 123.321)
     loopBackTest(String, "")
     loopBackTest(String, "Nice to see ya!")
-    loopBackTest(Binary, "\x07Nice to see ya! )*)(*кампутер&)(*\x00&)(*&)(*&&*\x09^%&^%$%^$%$!#@!")
+    loopBackTest(Binary, "\x07Nice to see ya! )*)(*РєР°РјРїСѓС‚РµСЂ&)(*\x00&)(*&)(*&&*\x09^%&^%$%^$%$!#@!")
     loopBackTest(Array, [])
     loopBackTest(Array, ["123", 1])
     loopBackTest(Array, [3, 3])
@@ -86,7 +86,7 @@ def loopbackTest():
     loopBackTest(Map, {})
     loopBackTest(Map, {1 : 2})
     loopBackTest(Remote, RemoteReference("yo://yeshi/yama"))
-    loopBackTestTyped(Xml, u"<hello who=\"Привет, мир!\"/>")
+    loopBackTestTyped(Xml, u"<hello who=\"Небольшой текст тут!\"/>")
     
     loopBackTestTyped(Tuple, (), list)
     loopBackTestTyped(Tuple, (1,), list)
@@ -213,10 +213,14 @@ def callTestLocal(url):
         assert False # should not get here
     except Exception, e:
         # print traceback.format_exc() # debug
-        pass
+        pass    
     
-    callBlobTest(proxy)    
-    redirectTest(proxy) 
+    # What about UTF-8?
+    padonkRussianMessage = u"Пррревед абонентеги!"
+    assert padonkRussianMessage == proxy.echo(padonkRussianMessage)
+    
+    callBlobTest(proxy)
+    redirectTest(proxy)
         
     if False:
         print "Some performance measurements..."
@@ -236,21 +240,32 @@ def callTestPublic(url):
         proxy = HessianProxy(url)
         
         proxy.nullCall()
+        # In the next moment nothing continued to happen.
         
         assert "Hello, world" == proxy.hello()
         print '.', 
+        
         o = {1:"one", 2:"two"}
         assert o == proxy.echo(o)
         print '.', 
+        
         o = (-1, -2)
         assert list(o) == proxy.echo(o)
         print '.', 
+        
         o = ["S-word", "happen-s"]
         assert o == proxy.echo(o)
         print '.', 
+        
         a, b = 1902, 34
         assert (a - b) == proxy.subtract(a, b)
         print '.', 
+        
+        # What about UTF-8?
+        padonkRussianMessage = u"Превед!"
+        assert padonkRussianMessage == proxy.echo(padonkRussianMessage)
+        print '.', 
+                                                                                  
     except Exception, e:
         st = traceback.format_exc()
         if not warnConnectionRefused(e, url):
@@ -281,8 +296,8 @@ if __name__ == "__main__":
         print '.', 
         
         callTestLocal("http://localhost:%d/" % TEST_PORT)
-        callTestPublic("http://www.caucho.com/hessian/test/basic")
         sslTest()
+        callTestPublic("http://www.caucho.com/hessian/test/basic")        
         
         print "\nTests passed."
         

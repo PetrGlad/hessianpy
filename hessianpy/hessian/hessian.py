@@ -189,6 +189,8 @@ class Chunked(ShortSequence):
     codes[0] starts last chunk."""
 
     readChunk = ShortSequence.read # shortcut    
+    
+    chunk_size = 2**12 # 4KiB
 
     def read(self, ctx, prefix):
         result = "";
@@ -199,27 +201,70 @@ class Chunked(ShortSequence):
         result += self.readChunk(ctx, prefix)
         return result
 
-    def write(self, ctx, value):
-        
-        chunk_size = 2**10
-        
+    def write(self, ctx, value):        
         length = len(value)
         pos = 0
-        while pos < length - chunk_size:
+        while pos < length - Chunked.chunk_size:
             ctx.write(self.codes[1])
             writeShort(ctx, chunk_size)
-            ctx.write(value[pos : pos + chunk_size])
-            pos += chunk_size
+            ctx.write(value[pos : pos + Chunked.chunk_size])
+            pos += Chunked.chunk_size
         # write last chunk
         ctx.write(self.codes[0])
         writeShort(ctx, length - pos)
         ctx.write(value[pos : ])
+
+
+class UTF8Sequence(Chunked):
+    """This class fixes interoperability issue with existing Java library.
+    (Counts length by chars not by octets)
+    Although I believe that we should use Chunked for every sequence
+    (see UTF8Sequence descendants)
     
+    TODO: Share code with Chunked
+    """
+    def read(self, ctx, prefix):
+        result = "";
+        while (prefix == self.codes[1]):
+            count = readShort(ctx)            
+            #TODO read symbol-by symbol here            
+            result += ctx.read(count)
+            prefix = ctx.read(1)
+        assert prefix == self.codes[0]
+        result += self.readChunk(ctx, prefix)        
+        return unicode(result, "utf-8")
+
+    def write(self, ctx, value):        
+        value = value.encode("utf-8")
+        length = len(value)
+        pos = 0
+        # TODO write symbol-by symbol here
+        # How do we calculate chunk sizes here
+        while pos < length - Chunked.chunk_size:
+            ctx.write(self.codes[1])
+            writeShort(ctx, Chunked.chunk_size)
+            ctx.write(value[pos : pos + Chunked.chunk_size])
+            pos += Chunked.chunk_size
+        # write last chunk
+        ctx.write(self.codes[0])
+        writeShort(ctx, length - pos)
+        ctx.write(value[pos : ])
+
     
-class String(Chunked):
+class String(UTF8Sequence):
     codes = ["S", "s"]
     ptype = str
 types.append(String)
+
+
+class UnicodeString(String):    
+    ptype = unicode
+types.append(UnicodeString)
+
+
+class Xml(UTF8Sequence):
+    codes = ["X", "x"]
+types.append(Xml)
 
 
 class Binary(Chunked):
@@ -370,11 +415,6 @@ types.append(Header)
 class Method(ShortSequence):
     codes = ["m"]
 types.append(Method)
-
-
-class Xml(Chunked):
-    codes = ["X", "x"]
-types.append(Xml)
 
 
 class Call:
