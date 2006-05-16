@@ -9,7 +9,12 @@ See hello.py for sample code.
 Note that (optional) HTTPS test requires OpenSSL library (see http://openssl.org) 
 and wrapper pyOpenSSL (see http://pyopenssl.sourceforge.net).
 Note that HTTPS support in Python may not be enabled by default 
-and you may need to add it separately (namely PYTHON_HOME/DLLs/_ssl.pyd).
+and you may need to add it separately (namely add library PYTHON_HOME/DLLs/_ssl.pyd).
+
+
+	REQUIREMENTS
+	
+Python 2.4 or higher.
 
 
 	INSTALLATION
@@ -19,6 +24,15 @@ if you prefer, include directory with unpacked library into your PYTHON_PATH.
 
 
 	RELEASE NOTES
+
+v0.5.1 2006-05-18
+	1. Incompatibility with Java implementation fixed. 
+	Specification of the protocol does not specify in what units length of UTF-8 
+	data is measured. Initial HessianPy implementation counted all lenghts in 
+	octets whereas Java implementation in Unicode symbols.
+	Now HessianPy writes string and XML data lenghts in symbols too. Now all
+	tests with non-ascii Unicode symbols pass. This however slowed down 
+	serialization as we need to write characters one by one.	
 
 v0.5 2006-04-09
 	1. Integrated support for HTTP authorization and HTTPS (Contributed by Bernd Stolle)
@@ -75,6 +89,7 @@ server.pem - sample OpenSSL keypair (used in testing)
 test/test.py - tests for this library
 testSecure/test.py - HTTPS tests for this library
 transports.py - transport protocols
+UTF8.py - UTF-8 encoder/decoder
 
 
 	WHY
