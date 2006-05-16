@@ -21,6 +21,7 @@
 #
 from struct import pack, unpack
 from types import StringType
+import UTF8
 
 __revision__ = "$Rev$"
 
@@ -221,34 +222,44 @@ class UTF8Sequence(Chunked):
     Although I believe that we should use Chunked for every sequence
     (see UTF8Sequence descendants)
     
-    TODO: Share code with Chunked
+    TODO: Share code with Chunked (if possible)
     """
+    
+    def readChunk(self, ctx, prefix):
+        result = u""
+        count = readShort(ctx)
+        for ci in range(count):
+            result += unichr(UTF8.readSymbol(ctx.read))
+        return result
+            
     def read(self, ctx, prefix):
         result = "";
         while (prefix == self.codes[1]):
-            count = readShort(ctx)            
-            #TODO read symbol-by symbol here            
-            result += ctx.read(count)
+            result += self.readChunk(ctx, prefix)
             prefix = ctx.read(1)
         assert prefix == self.codes[0]
-        result += self.readChunk(ctx, prefix)        
-        return unicode(result, "utf-8")
+        result += self.readChunk(ctx, prefix)
+        return result
+    
+    def writeChunk(self, ctx, val):
+        length = len(val)
+        writeShort(ctx, length)
+        for k in range(length):
+            for byte in UTF8.symbolToUTF8(ord(val[k])):
+                ctx.write(byte)
 
-    def write(self, ctx, value):        
-        value = value.encode("utf-8")
-        length = len(value)
+    def write(self, ctx, value):
+        length = len(value)        
         pos = 0
         # TODO write symbol-by symbol here
         # How do we calculate chunk sizes here
         while pos < length - Chunked.chunk_size:
             ctx.write(self.codes[1])
-            writeShort(ctx, Chunked.chunk_size)
-            ctx.write(value[pos : pos + Chunked.chunk_size])
+            self.writeChunk(ctx, value[pos : pos + Chunked.chunk_size])
             pos += Chunked.chunk_size
         # write last chunk
         ctx.write(self.codes[0])
-        writeShort(ctx, length - pos)
-        ctx.write(value[pos : ])
+        self.writeChunk(ctx, value[pos : ])
 
     
 class String(UTF8Sequence):
@@ -257,18 +268,20 @@ class String(UTF8Sequence):
 types.append(String)
 
 
-class UnicodeString(String):    
+class UnicodeString(String):
     ptype = unicode
 types.append(UnicodeString)
 
 
 class Xml(UTF8Sequence):
     codes = ["X", "x"]
+    ptype = "hessian.Xml"
 types.append(Xml)
 
 
-class Binary(Chunked):
+class Binary(Chunked):    
     codes = ["B", "b"]
+    ptype = "hessian.Binary"
 types.append(Binary)
 
 

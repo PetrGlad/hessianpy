@@ -179,7 +179,7 @@ class TestServer(Thread):
 
 
 def callBlobTest(proxy):    
-    size = 2**20    
+    size = 2**17
     big = "*" * size
     r = proxy.echo(big)
     assert big == r

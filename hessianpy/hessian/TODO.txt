@@ -1,7 +1,15 @@
-1. Transparent exception handling across remote call would be desirable 
-(translate or reformat returned error message into usual Python stack trace)
+* Transparent exception handling across remote call would be desirable 
+(translate or reformat returned error message into usual Python stack trace).
 
-2. Try using urllib2 instead of hand-crafted transport support 
+* Try using urllib2 instead of hand-crafted transport support 
 and see what happens (code complexity, compatibility, performance etc.)
+For example now authorization is hand coded and "temporary moved" 
+response is not handled - all this is implemented in urllib2.
 
-3. Use distutils for distribution as there is many files now
+* Implement simple way of specifying Hessian type to be serialized.
+Now it is very tricky to make the library to send XML or Binary.
+Binary types probably should be handled as streams.
+
+* Speed up UTF8 conversions (can we use standard encoders for that?).
+
+* Use distutils for distribution as there are many files now.
