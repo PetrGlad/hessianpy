@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 #
 # Hessian protocol implementation
 # This file contains simple RPC server code.
