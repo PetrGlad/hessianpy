@@ -33,7 +33,7 @@ import httplib
 from StringIO import StringIO
 
 __revision__ = "$Rev$"
-__version__ = "0.5.0"
+__version__ = "0.5.1"
 
 
 AUTH_BASIC = "basic"
