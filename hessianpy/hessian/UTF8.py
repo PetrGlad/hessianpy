@@ -33,12 +33,12 @@ def readSymbol(sourceFun):
     # number of 1's: 0, 2, 3, 4
     byteLen = 1
     while b & 0x80:
-        byteLen += 1
-        if byteLen > 4:
-            raise Exception("UTF-8 Error: Incorrect UTF-8 encoding"
-                            +" (first octet of symbol = 0x%x)" % ord(first))
+        byteLen += 1        
         b <<= 1
-    if byteLen > 1:
+    if byteLen > 4:
+            raise Exception("UTF-8 Error: Incorrect UTF-8 encoding"
+                            +" (first octet of symbol = 0x%x)" % ord(first))        
+    elif byteLen > 1:
             byteLen -= 1            
     mask = [0x7f, 0x1f, 0x0f, 0x07] [byteLen - 1]
     codePoint = ord(first) & mask
@@ -53,16 +53,17 @@ def readSymbol(sourceFun):
     return codePoint
 
 
-def symbolToUTF8(codePoint):
-    byteLen = 1    
-    for k in [0x0000007F, 0x000007FF, 0x0000FFFF, 0x001FFFFF]:        
-        if codePoint < k:
+def symbolToUTF8(codePoint):    
+    byteLen = 1
+    for k in [0x0000007F, 0x000007FF, 0x0000FFFF, 0x001FFFFF]:
+        if codePoint <= k:
             break
         byteLen += 1
-        if byteLen > 4:
-            raise Exception("UTF-8 Error: Can not encode codePoint ["
-                            + codePoint + "] in UTF-8 (it is too big)")        
-    result = [0] * byteLen    
+    else:
+        raise Exception("UTF-8 Error: Can not encode codePoint ["
+                        + codePoint + "] in UTF-8. It is bigger than 0x001FFFFF")
+                
+    result = [0] * byteLen  
     
     c = codePoint    
     k = byteLen - 1
@@ -97,12 +98,15 @@ def test():
     В этом нет ничего нового,
     Ибо вообще ничего нового нет.
         Николай Рерих
+        
+    ÀùúûüýþÿĀāĂăĄąĆćĈĉ
+    $¢£¤¥₣₤₧₪₫€
     """    
     u0 = src.encode("UTF-8")
     u1 = ""
     for c in src:
         u1 += "".join(symbolToUTF8(ord(c)))
-    assert u1.decode("UTF-8") == src # :)
+    assert u1.decode("UTF-8") == src
     s = []
     k = 0
     s_read = StringIO(u1)
