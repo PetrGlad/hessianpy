@@ -24,6 +24,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+__revision__ = "$Rev: 44 $"
+
 
 def readSymbol(sourceFun):
     first = sourceFun(1)
