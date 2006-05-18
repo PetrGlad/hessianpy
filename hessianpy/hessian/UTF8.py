@@ -80,7 +80,7 @@ def symbolToUTF8(codePoint):
         c >>= 6
         k -= 1
         
-    firstMark = [0, 0xc0, 0xc1, 0xf0] [byteLen - 1]
+    firstMark = [0, 0xc0, 0xe0, 0xf0] [byteLen - 1]
     result[0] = chr(firstMark | c)
     
     # print "thisByte = %x; mark = %x; firstMark = %x" % ((mark | codePoint & 0x7f), mark, firstMark)
@@ -91,14 +91,12 @@ def symbolToUTF8(codePoint):
         
 
 def test():
-    # TODO Test exceptions
-    
+    # TODO Test exceptions    
     from StringIO import StringIO
     src = u"""
     В этом нет ничего нового,
     Ибо вообще ничего нового нет.
-        Николай Рерих
-        
+        Николай Рерих        
     ÀùúûüýþÿĀāĂăĄąĆćĈĉ
     $¢£¤¥₣₤₧₪₫€
     """    
