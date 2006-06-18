@@ -25,6 +25,13 @@ if you prefer, include directory with unpacked library into your PYTHON_PATH.
 
 	RELEASE NOTES
 
+v0.5.2 2006-05-18
+	1. Transports refactored to use urllib2. Initial implementation assumed
+	that HTTPConnection allows keeping connections open thus enhancing 
+	performance. This is wrong. urllib2 provides more functionality 
+	and is simpler to use so code is now shorter and cleaner.
+	2. Small code cleanups: Imports are now normalized.
+
 v0.5.1 2006-05-18
 	1. Incompatibility with Java implementation fixed. 
 	Specification of the protocol does not specify in what units length of UTF-8 

@@ -1,1 +1,2 @@
-python test/test.py
+cd ..
+python hessian/test/test.py
