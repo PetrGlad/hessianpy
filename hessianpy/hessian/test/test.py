@@ -27,8 +27,9 @@ from hessian.server import HessianHTTPRequestHandler
 from BaseHTTPServer import HTTPServer
 from StringIO import StringIO
 from time import time
-import traceback
 from threading import Thread
+import traceback
+import urllib2
 
 
 __revision__ = "$Rev$"
@@ -130,7 +131,9 @@ TEST_PORT = 7777
 
 
 def warnConnectionRefused(exception, url):
-    if exception.args == (10061, 'Connection refused') \
+    print "exc:", exception # debug
+    if isinstance(exception, IOError) \
+        or exception.args == (10061, 'Connection refused') \
         or exception.args == (11001, 'getaddrinfo failed'):
         print "\nWarning: Server '" + url +  "'is not available. Can not perform a callTest"
         return True
@@ -280,23 +283,23 @@ def sslTest():
         print "Warning: No OpenSSL module. SSL will not be tested."
         return
     
-    import testSecure
-    testSecure.testHttps()
+    import hessian.test.testSecure
+    hessian.test.testSecure.testHttps()
      
 
 if __name__ == "__main__":
     try:
-        loopbackTest()
-        print '.', 
-        serializeCallTest()
-        print '.', 
-        serializeReplyTest()
-        print '.', 
-        referenceTest()
-        print '.', 
-        
-        callTestLocal("http://localhost:%d/" % TEST_PORT)
-        sslTest()
+#        loopbackTest()
+#        print '.', 
+#        serializeCallTest()
+#        print '.', 
+#        serializeReplyTest()
+#        print '.', 
+#        referenceTest()
+#        print '.', 
+#        
+#        callTestLocal("http://localhost:%d/" % TEST_PORT)
+#        sslTest()
         callTestPublic("http://www.caucho.com/hessian/test/basic")        
         
         print "\nTests passed."

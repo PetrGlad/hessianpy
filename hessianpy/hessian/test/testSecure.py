@@ -27,11 +27,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-
-from secureServer import *
-from threading import Thread
-from client import HessianProxy
 from time import sleep
+from threading import Thread
+from hessian.secureServer import *
+from hessian.client import HessianProxy
 
 
 __revision__ = "$Rev: 33 $"

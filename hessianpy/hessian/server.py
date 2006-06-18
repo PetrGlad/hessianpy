@@ -42,7 +42,7 @@ class HessianHTTPRequestHandler(BaseHTTPRequestHandler):
             ctx = hessian.ParseContext(self.rfile)
             (method, headers, params) = hessian.Call().read(ctx, ctx.read(1))
         except Exception, e:
-            self.send_error(500, "Can not parse call request. error: " + `e`)
+            self.send_error(500, "Can not parse call request. Error: " + str(e))
             return
       
         if not self.message_map.has_key(method):
@@ -90,6 +90,9 @@ class TestHandler(HessianHTTPRequestHandler):
     
                 
 if __name__ == "__main__":
+    
+    # Sample code 
+    
     print "Starting test server"
     server_address = ('localhost', 9001)
     httpd = HTTPServer(server_address, TestHandler)

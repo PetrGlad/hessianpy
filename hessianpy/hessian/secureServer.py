@@ -44,7 +44,7 @@ class HessianHTTPSRequestHandler(HessianHTTPRequestHandler):
 
 
 class SecureHTTPServer(HTTPServer):
-    def __init__(self, server_address, HandlerClass, keyfile = 'server.pem'):
+    def __init__(self, server_address, HandlerClass, keyfile = 'hessian/server.pem'):
         BaseServer.__init__(self, server_address, HandlerClass)
         ctx = SSL.Context(SSL.SSLv23_METHOD)
         ctx.use_privatekey_file (keyfile)

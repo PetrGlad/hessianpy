@@ -6,6 +6,7 @@
 # http://www.caucho.com/resin-3.0/protocols/hessian-1.0-spec.xtp
 #
 # Copyright 2006 Bernd Stolle (thebee at sourceforge net)
+# Copyright 2006 Petr Gladkikh (batyi at sourceforge net)
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -31,21 +32,22 @@ Content:
 import base64
 import httplib
 from StringIO import StringIO
+import urllib2
 
 __revision__ = "$Rev$"
-__version__ = "0.5.1"
+__version__ = "0.5.2"
 
 
 AUTH_BASIC = "basic"
 
 
 def getTransportForProtocol(protocol):
-    """ returns the appropriate transport for a protocol identifier
+    """ Returns the appropriate transport for a protocol's URL scheme
     """
     return {
-        "http": HTTPTransport, 
-        "https": HTTPSTransport, 
-    }[protocol]
+        "http": BasicUrlLibTransport, 
+        "https": BasicUrlLibTransport, 
+    } [protocol]
 
 class TransportError(Exception):
     """ Generic Exception for Transports
@@ -53,77 +55,52 @@ class TransportError(Exception):
     pass
 
 class HessianTransport:
-    """ Base class for all transports that can be used to talk to a Hessian.
+    """ Base class for all transports that can be used to talk 
+    to a Hessian server. 
     """
 
-    def __init__(self, host = "", port = 0, path = ""):
-        # initialization goes here
-        self._host = host
-        self._port = port
-        self._path = path
-
-    def authenticate(self, credentials):
-        """ Invoke the authentication mechanism of the transport layer
-	    if supported.
-        """
-        pass
+    def __init__(self, uri, credentials):
+        self._uri = uri
+        self._credentials = credentials
 
     def request(self, outstream):
-        """ Transport a request to the Hessian
-        """
-        pass
-
-class HTTPTransport(HessianTransport):
-    """ Transport the Hessian protocol via plain old unsecure HTTP
-    """
+        " Send stream to server "
+        raise Exception("Method is not implemented")
     
-    def __init__(self, host = "localhost", port = 0, path = "/", use_ssl = False):
-        if port == 0:
-            port = {
-                True: httplib.HTTPS_PORT, 
-                False: httplib.HTTP_PORT, 
-            }[use_ssl]
-        HessianTransport.__init__(self, host, port, path)
-        self._connection = {
-            True: httplib.HTTPSConnection, 
-            False: httplib.HTTPConnection, 
-        }[use_ssl](self._host, self._port)
-        self._headers = {
-            "Host" : self._host, 
-            "User-Agent" : "HessianPy/%s" % __version__ }
-
-    def authenticate(self, credentials):
-        """ Authenticate to the server using BasicAuthentication.
-        Actully just stores the values, since real authentication is performed 
-        on every single request.
-
-        @param credentials tuple consisting of username and password
-        @returns True, since there is no way of telling, whether the credentials are correct
-        """
-        # store username and password for later use
-        self._headers["Authorization"] = "Basic %s" % base64.encodestring(
-             "%s:%s" % (credentials["username"], 
-             credentials["password"])).rstrip()
-        return True
-
+    
+class BasicUrlLibTransport(HessianTransport):
+    """ Transport handler that uses urllib2. 
+    Basic authentication scheme is used. """
+    
+    def __init__(self, uri, credentials):
+        HessianTransport.__init__(self, uri, credentials)
+        print "init:uri:", uri, "; cred:", self._credentials # debug
+        
+        if (False and self._credentials != None):
+            # HTTPPasswordMgrWithDefaultRealm()            
+            auth_handler = urllib2.HTTPBasicAuthHandler()
+            auth_handler.parent
+            # HTTPDigestAuthHandler                
+            auth_handler.add_password(None, None, 
+                                      self._credentials['username'], 
+                                      self._credentials['password'])
+            self._opener = urllib2.build_opener(auth_handler)
+        else:
+            self._opener = urllib2.build_opener()
+            
+        self._opener.addheaders = [
+                     ('User-agent', 'HessianPy/%s' % __version__)
+                     ]
+#        # store username and password for later use
+#        self.opener.addheaders["Authorization"] = "Basic %s" % base64.encodestring(
+#             "%s:%s" % (credentials["username"], 
+#             credentials["password"])).rstrip() 
+    
+  
     def request(self, outstream):
-        """ Send the request via HTTP
-	    """
-        # pass it to the server
-        self._connection.request("POST", self._path, outstream.getvalue(), 
-            self._headers)
-        response = self._connection.getresponse()
-        if not response.status == httplib.OK:
-            # tbd: analyze error code and take appropriate actions
-            raise Exception("HTTP Error %d: %s" %
-                (response.status, response.reason))
+        r = urllib2.Request(self._uri, outstream.read())
+        response = self._opener.open(r)     
         result = StringIO(response.read())
         response.close()
-        return result
-
-class HTTPSTransport(HTTPTransport):
-    """ Transport the Hessian protocol via SSL encrypted HTTP
-    """
-
-    def __init__(self, host = "localhost", port = 0, path = "/"):
-        HTTPTransport.__init__(self, host, port, path, True)
+        return result        
+  

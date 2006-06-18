@@ -26,16 +26,9 @@ import transports
 import urlparse
 from StringIO import StringIO
 
+
 __revision__ = "$Rev$"
 
-def split_host_and_port(host_and_port):
-    result = host_and_port.split(":", 1)
-    if len(result) == 2:
-        return (result[0], int(result[1]))
-    else:
-        # Use default port here until someone comes up with a better idea
-        # --> Need a map protocol_schema->default_port ?
-        return (result[0], "80")
 
 class Method:
     "Encapsulates the method to be called"
@@ -53,32 +46,38 @@ class HessianProxy:
 
     typename = "client.HessianProxy"
     
-    def __init__(self, url, authdata = { 
-                        "type": transports.AUTH_BASIC, 
+    def __init__(self, url, authdata = {                       
                         "username": "", 
                         "password": "" }):
-        self.url = url        
+        self.url = url
         url_tuple  = urlparse.urlparse(url)
         protocol = url_tuple[0]
-        host_with_port = url_tuple[1]
-        path = "%s?%s" % (url_tuple[2], url_tuple[4])
-        host, port = split_host_and_port(host_with_port)        
+        #host_with_port = url_tuple[1]
+        #path = "%s?%s" % (url_tuple[2], url_tuple[4])
+        #host, port = split_host_and_port(host_with_port)        
         
         self._authdata = authdata
         transport_class = transports.getTransportForProtocol(protocol)
-        self._transport = transport_class(host, port, path)
-        self._transport.authenticate(authdata)
+        self._transport = transport_class(url, authdata)
         
     def __invoke(self, method, params):        
-        request = StringIO()
+        request = StringIO()        
         hessian.writeObject(
                             hessian.WriteContext(request, self.drain), 
                             (method, [], params), 
                             hessian.Call())
         
-        # print request.getvalue() # debug 
+        # print "request.value (" + `len(request.getvalue())` + ") =", request.getvalue() # debug
         
-        response = self._transport.request(request)
+        #////////////////////////////////////////////////////////////////////        
+        import urllib2
+        opener = urllib2.build_opener()
+        opener.addheaders = [('User-agent', 'HessianPy/0.5.2')]
+        r = urllib2.Request(self.url, request.getvalue())        
+        response = opener.open(r)
+        #////////////////////////////////////////////////////////////////////        
+        #response = self._transport.request(request)
+        #////////////////////////////////////////////////////////////////////
 
         # this will retain same credential for all interfaces we are working with
         deref_f = lambda x : self.deref(x, self._authdata)
