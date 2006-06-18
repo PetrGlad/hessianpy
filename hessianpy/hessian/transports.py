@@ -49,10 +49,12 @@ def getTransportForProtocol(protocol):
         "https": BasicUrlLibTransport, 
     } [protocol]
 
+
 class TransportError(Exception):
     """ Generic Exception for Transports
     """
     pass
+
 
 class HessianTransport:
     """ Base class for all transports that can be used to talk 
@@ -74,16 +76,22 @@ class BasicUrlLibTransport(HessianTransport):
     
     def __init__(self, uri, credentials):
         HessianTransport.__init__(self, uri, credentials)
-        print "init:uri:", uri, "; cred:", self._credentials # debug
+        # print "init:uri:", uri, "; cred:", self._credentials # debug
         
-        if (False and self._credentials != None):
-            # HTTPPasswordMgrWithDefaultRealm()            
-            auth_handler = urllib2.HTTPBasicAuthHandler()
-            auth_handler.parent
-            # HTTPDigestAuthHandler                
-            auth_handler.add_password(None, None, 
+        if (self._credentials != None):
+            
+            # TODO Make tests for authorization
+            
+            pman = urllib2.HTTPPasswordMgrWithDefaultRealm()
+            auth_handler = urllib2.HTTPBasicAuthHandler(pman)            
+            auth_handler.add_password(None, # default realm
+                                      uri, 
                                       self._credentials['username'], 
                                       self._credentials['password'])
+            
+            # TODO Add digest authorization handler here?            
+            # HTTPDigestAuthHandler
+            
             self._opener = urllib2.build_opener(auth_handler)
         else:
             self._opener = urllib2.build_opener()
