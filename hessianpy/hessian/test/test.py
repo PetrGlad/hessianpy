@@ -301,7 +301,7 @@ if __name__ == "__main__":
         
         callTestLocal("http://localhost:%d/" % TEST_PORT)
         sslTest()
-        callTestPublic("http://www.caucho.com/hessian/test/basic")        
+        callTestPublic("http://www.caucho.com/hessian/test/basic/")
         
         print "\nTests passed."
         
