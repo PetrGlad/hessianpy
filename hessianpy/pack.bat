@@ -1,0 +1,1 @@
+7z -tzip -xr!.svn a hessian-0.5.2.zip hessian
