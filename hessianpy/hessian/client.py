@@ -69,15 +69,8 @@ class HessianProxy:
         
         # print "request.value (" + `len(request.getvalue())` + ") =", request.getvalue() # debug
         
-        #////////////////////////////////////////////////////////////////////        
-        import urllib2
-        opener = urllib2.build_opener()
-        opener.addheaders = [('User-agent', 'HessianPy/0.5.2')]
-        r = urllib2.Request(self.url, request.getvalue())        
-        response = opener.open(r)
-        #////////////////////////////////////////////////////////////////////        
-        #response = self._transport.request(request)
-        #////////////////////////////////////////////////////////////////////
+        request.seek(0)
+        response = self._transport.request(request)
 
         # this will retain same credential for all interfaces we are working with
         deref_f = lambda x : self.deref(x, self._authdata)

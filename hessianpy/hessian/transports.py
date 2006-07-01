@@ -75,6 +75,8 @@ class BasicUrlLibTransport(HessianTransport):
     Basic authentication scheme is used. """
     
     def __init__(self, uri, credentials):
+        
+        # credentials = None # DEBUG
         HessianTransport.__init__(self, uri, credentials)
         # print "init:uri:", uri, "; cred:", self._credentials # debug
         
@@ -89,16 +91,16 @@ class BasicUrlLibTransport(HessianTransport):
                                       self._credentials['username'], 
                                       self._credentials['password'])
             
-            # TODO Add digest authorization handler here?            
+            # TODO Add digest authorization handler here? 
             # HTTPDigestAuthHandler
             
             self._opener = urllib2.build_opener(auth_handler)
         else:
             self._opener = urllib2.build_opener()
             
-        self._opener.addheaders = [
-                     ('User-agent', 'HessianPy/%s' % __version__)
-                     ]
+        #self._opener.addheaders = [
+        #             ('User-agent', 'HessianPy/%s' % __version__)
+        #             ]
 #        # store username and password for later use
 #        self.opener.addheaders["Authorization"] = "Basic %s" % base64.encodestring(
 #             "%s:%s" % (credentials["username"], 
