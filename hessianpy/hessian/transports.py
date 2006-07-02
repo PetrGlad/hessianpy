@@ -98,9 +98,9 @@ class BasicUrlLibTransport(HessianTransport):
         else:
             self._opener = urllib2.build_opener()
             
-        #self._opener.addheaders = [
-        #             ('User-agent', 'HessianPy/%s' % __version__)
-        #             ]
+        self._opener.addheaders = [
+                     ('User-agent', 'HessianPy/%s' % __version__)                     
+                     ]
 #        # store username and password for later use
 #        self.opener.addheaders["Authorization"] = "Basic %s" % base64.encodestring(
 #             "%s:%s" % (credentials["username"], 
@@ -109,7 +109,7 @@ class BasicUrlLibTransport(HessianTransport):
   
     def request(self, outstream):
         r = urllib2.Request(self._uri, outstream.read())
-        response = self._opener.open(r)     
+        response = self._opener.open(r)        
         result = StringIO(response.read())
         response.close()
         return result        

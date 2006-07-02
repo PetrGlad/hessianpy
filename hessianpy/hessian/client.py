@@ -67,8 +67,7 @@ class HessianProxy:
                             (method, [], params), 
                             hessian.Call())
         
-        # print "request.value (" + `len(request.getvalue())` + ") =", request.getvalue() # debug
-        
+        # print "request.value (" + `len(request.getvalue())` + ") =", `request.getvalue()` # debug        
         request.seek(0)
         response = self._transport.request(request)
 

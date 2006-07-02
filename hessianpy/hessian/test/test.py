@@ -130,13 +130,12 @@ SECRET_MESSAGE = "Hello, from HessianPy!"
 TEST_PORT = 7777
 
 
-def warnConnectionRefused(exception, url):
-    # TODO Refine this handler (may catch more other errors besides unavailable server)
-    # print "exc:", exception # debug
-    if isinstance(exception, urllib2.URLError) \
-        or exception.args == (10061, 'Connection refused') \
-        or exception.args == (11001, 'getaddrinfo failed'):
-        print "\nWarning: Server '" + url +  "'is not available. Can not perform a callTest"
+def warnConnectionRefused(exception, url):    
+    print "\nException:", exception
+    # If 'Connection refused' or 'getaddrinfo failed'
+    if exception.args[0] in [11001, 10061] \
+        or exception.reason[0] in [11001, 10061]:
+        print "Warning: Server '" + url +  "'is not available. Can not perform a remote call test."
         return True
     else:
         return False

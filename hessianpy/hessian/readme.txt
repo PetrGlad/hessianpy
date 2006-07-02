@@ -31,8 +31,25 @@ v0.5.2 2006-05-30
 	performance. This is wrong. urllib2 provides more functionality 
 	and is simpler to use so code is now shorter and cleaner.
 	2. Small code cleanups: Imports are now "normalized".
-	3. NOTE: Tests with public Caucho's interface was not performed.
-	Public service was unavailbale at the time of release.
+	3. NOTE: Tests with public Caucho's interface was not passed. 
+	There's some "internal server error". Although this release of 
+	HessianPy works well with my own Hessian-3.0.13+Jetty+Spring_remoting.
+	4. If you want urllib's redirection to work properly you need following 
+	fix to python 2.4 library.
+>>>begin_patch
+--- C:\Programs\Python24\Lib\urllib2.py	Sun Jul 02 13:17:09 2006
++++ C:\Programs\Python24\Lib\urllib2.py.1	Sun Jul 02 13:20:40 2006
+@@ -505,7 +505,8 @@
+             # from the user (of urllib2, in this case).  In practice,
+             # essentially all clients do redirect in this case, so we
+             # do the same.
+-            return Request(newurl,                           
++            return Request(newurl,
++                           data=req.data,
+                            headers=req.headers,
+                            origin_req_host=req.get_origin_req_host(),
+                            unverifiable=True)
+<<<end_patch
 
 v0.5.1 2006-05-18
 	1. Incompatibility with Java implementation fixed. 
