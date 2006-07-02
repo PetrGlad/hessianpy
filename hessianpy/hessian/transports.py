@@ -35,7 +35,7 @@ from StringIO import StringIO
 import urllib2
 
 __revision__ = "$Rev$"
-__version__ = "0.5.2"
+__version__ = "0.5.3"
 
 
 AUTH_BASIC = "basic"

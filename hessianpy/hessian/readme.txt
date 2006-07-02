@@ -25,7 +25,7 @@ if you prefer, include directory with unpacked library into your PYTHON_PATH.
 
 	RELEASE NOTES
 
-v0.5.2 2006-05-30
+v0.5.3 2006-05-02
 	1. Transports refactored to use urllib2. Initial implementation assumed
 	that HTTPConnection allows keeping connections open thus enhancing 
 	performance. This is wrong. urllib2 provides more functionality 
