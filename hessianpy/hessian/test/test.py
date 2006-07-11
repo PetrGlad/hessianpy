@@ -133,8 +133,8 @@ TEST_PORT = 7777
 def warnConnectionRefused(exception, url):    
     print "\nException:", exception
     # If 'Connection refused' or 'getaddrinfo failed'
-    if exception.args[0] in [11001, 10061] \
-        or exception.reason[0] in [11001, 10061]:
+    if (hasattr(exception, "args") and exception.args[0] in [11001, 10061]) \
+        or(hasattr(exception, "args") and exception.reason[0] in [11001, 10061]):
         print "Warning: Server '" + url +  "'is not available. Can not perform a remote call test."
         return True
     else:
