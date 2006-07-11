@@ -219,11 +219,16 @@ def callTestLocal(url):
         pass    
     
     # What about UTF-8?
-    padonkRussianMessage = u"Пррревед абонентеги!"
-    assert padonkRussianMessage == proxy.echo(padonkRussianMessage)
+    padonkMessage = u"Пррревед абонентеги!"
+    assert padonkMessage == proxy.echo(padonkMessage)
     
     callBlobTest(proxy)
     redirectTest(proxy)
+    
+    try:
+        print proxy.__str__()
+    except Exception, e:
+        print e
         
     if False:
         print "Some performance measurements..."
@@ -300,7 +305,7 @@ if __name__ == "__main__":
         
         callTestLocal("http://localhost:%d/" % TEST_PORT)
         sslTest()
-        callTestPublic("http://www.caucho.com/hessian/test/basic")
+        # callTestPublic("http://www.caucho.com/hessian/test/basic")
         
         print "\nTests passed."
         

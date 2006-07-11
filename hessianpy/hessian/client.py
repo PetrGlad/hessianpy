@@ -79,11 +79,18 @@ class HessianProxy:
         if not status:
             # value is a Hessian error description
             raise Exception(value) 
-        return value
+        else:
+            return value
             
     def __getattr__(self, name):
-        # encapsulate the method call
-        return Method(self.__invoke, name)
+        if name[:2] == "__" and name[-2:] == "__":
+            # exclude special methods from remote invocation as it 
+            # causes more trouble than helps
+            
+            # print "attribute", name, "ignored" # debug
+            return None
+        else:
+            return Method(self.__invoke, name)
 
     @staticmethod
     def deref(obj, auth):
