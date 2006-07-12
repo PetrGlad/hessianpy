@@ -227,8 +227,9 @@ def callTestLocal(url):
     
     try:
         print proxy.__str__()
-    except Exception, e:
-        print e
+        assert False # exception should be thrown
+    except AttributeError, e:
+        pass # expected
         
     if False:
         print "Some performance measurements..."
@@ -305,6 +306,8 @@ if __name__ == "__main__":
         
         callTestLocal("http://localhost:%d/" % TEST_PORT)
         sslTest()
+        
+        print "Warning: Test with public service is disabled."
         # callTestPublic("http://www.caucho.com/hessian/test/basic")
         
         print "\nTests passed."

@@ -85,10 +85,9 @@ class HessianProxy:
     def __getattr__(self, name):
         if name[:2] == "__" and name[-2:] == "__":
             # exclude special methods from remote invocation as it 
-            # causes more trouble than helps
+            # causes more trouble than helps            
             
-            # print "attribute", name, "ignored" # debug
-            return None
+            raise AttributeError("No such attribute '%s'" % name)
         else:
             return Method(self.__invoke, name)
 
