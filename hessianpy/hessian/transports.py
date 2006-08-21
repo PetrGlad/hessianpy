@@ -35,7 +35,7 @@ from StringIO import StringIO
 import urllib2
 
 __revision__ = "$Rev$"
-__version__ = "0.5.3"
+__version__ = "0.5.4"
 
 
 AUTH_BASIC = "basic"
@@ -75,11 +75,12 @@ class BasicUrlLibTransport(HessianTransport):
     Basic authentication scheme is used. """
     
     def __init__(self, uri, credentials):
-        
-        # credentials = None # DEBUG
+
+        # self._credentials = None # debug        
+
         HessianTransport.__init__(self, uri, credentials)
         # print "init:uri:", uri, "; cred:", self._credentials # debug
-        
+                
         if (self._credentials != None):
             
             # TODO Make tests for authorization
@@ -96,11 +97,10 @@ class BasicUrlLibTransport(HessianTransport):
             
             self._opener = urllib2.build_opener(auth_handler)
         else:
-            self._opener = urllib2.build_opener()
-            
-        self._opener.addheaders = [
-                     ('User-agent', 'HessianPy/%s' % __version__)                     
-                     ]
+            self._opener = urllib2.build_opener()        
+# Following code would allow send authorization information in advance,
+# so single TCP request will suffice. Without it we'll rely on HTTP's 
+# authorization required response and authorization handlers.
 #        # store username and password for later use
 #        self.opener.addheaders["Authorization"] = "Basic %s" % base64.encodestring(
 #             "%s:%s" % (credentials["username"], 
@@ -108,7 +108,14 @@ class BasicUrlLibTransport(HessianTransport):
     
   
     def request(self, outstream):
-        r = urllib2.Request(self._uri, outstream.read())
+        outstream.flush()
+        req_data = outstream.read()        
+        # print "request", map(lambda x : "%02x" % ord(x), req_data[:50]), "\n\t:", req_data[:50] # debug        
+        r = urllib2.Request(self._uri, req_data)
+        # r.add_header("Content-Length", len(req))
+        r.add_header('User-agent', 'HessianPy/%s' % __version__)
+        r.add_header("Content-type", "application/octet-stream")
+        
         response = self._opener.open(r)        
         result = StringIO(response.read())
         response.close()

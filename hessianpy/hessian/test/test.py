@@ -307,8 +307,9 @@ if __name__ == "__main__":
         callTestLocal("http://localhost:%d/" % TEST_PORT)
         sslTest()
         
+        # Following URL is unavailable at the time of 0.5.4 release        
         print "Warning: Test with public service is disabled."
-        # callTestPublic("http://www.caucho.com/hessian/test/basic")
+        # callTestPublic("http://www.caucho.com/hessian/test/basic/")        
         
         print "\nTests passed."
         

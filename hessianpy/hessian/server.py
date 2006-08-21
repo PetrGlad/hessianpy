@@ -39,6 +39,9 @@ class HessianHTTPRequestHandler(BaseHTTPRequestHandler):
     
     def do_POST(self):        
         try:
+            #req = self.rfile.read(5) # debug
+            #print "got request", map(lambda x : "%02x" % ord(x), req[:20]), "\n\t:", req[:20] # debug            
+            #self.rfile.seek(0)
             ctx = hessian.ParseContext(self.rfile)
             (method, headers, params) = hessian.Call().read(ctx, ctx.read(1))
         except Exception, e:

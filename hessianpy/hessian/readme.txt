@@ -14,7 +14,7 @@ and you may need to add it separately (namely add library PYTHON_HOME/DLLs/_ssl.
 
 	REQUIREMENTS
 	
-Python 2.4 or higher.
+Python 2.4 or higher (download it from http://python.org/).
 
 
 	INSTALLATION
@@ -24,6 +24,17 @@ if you prefer, include directory with unpacked library into your PYTHON_PATH.
 
 
 	RELEASE NOTES
+	
+v0.5.4 2006-08-21
+	1. Corrected bug with http headers in remote request that prevented HessianPy 
+	from working with servlet-based implementation of Hessian.
+	
+	The reason of this bug turned out to be less esoteric then I thought.
+	Data encoding was not specified for request and was automaticaly set 
+	by urllib2.Request to application/x-www-form-urlencoded.
+	Servlet then dutifully tried to parse request data as HTTP form post.
+	Explicitly setting content type to application/octet-stream solved 
+	the problem.
 
 v0.5.3 2006-05-02
 	1. Transports refactored to use urllib2. Initial implementation assumed
