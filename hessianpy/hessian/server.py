@@ -28,8 +28,11 @@ from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 import hessian
 from StringIO import StringIO
 import traceback
+import socket
+
 
 __revision__ = "$Rev$"
+
 
 class HessianHTTPRequestHandler(BaseHTTPRequestHandler):    
     """Subclasses should create clss's member message_map which maps method 
@@ -78,6 +81,35 @@ class HessianHTTPRequestHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(reply)))
         self.end_headers()
         self.wfile.write(reply)
+
+
+
+class StoppableHTTPServer(HTTPServer):
+    """
+    Code taken from Python CookBook
+    http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/425210
+    """
+    
+    def server_bind(self):
+        HTTPServer.server_bind(self)
+        #self.socket.settimeout(200)
+        self.run = True
+
+    def get_request(self):
+        while self.run:
+            try:
+                sock, addr = self.socket.accept()
+                return (sock, addr)
+            except socket.timeout, e:
+                print "Exception--", e # DEBUG
+                pass
+
+    def stop(self):
+        self.run = False
+
+    def serve(self):
+        while self.run:
+            self.handle_request()
         
 
 # ---------------------------------------------------------
@@ -98,6 +130,10 @@ if __name__ == "__main__":
     
     print "Starting test server"
     server_address = ('localhost', 9001)
-    httpd = HTTPServer(server_address, TestHandler)
+    httpd = StoppableHTTPServer(server_address, TestHandler)
     print "Serving from ", server_address
-    httpd.serve_forever()
+    httpd.serve()
+    time.sleep(200)
+    httpd.stop()
+    print "Stopping test server"
+    

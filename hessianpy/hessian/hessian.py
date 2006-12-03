@@ -63,11 +63,10 @@ def writeObject(ctx, value, htype):
     "Write value with specified type"
     value = ctx.pre(value)
     if htype is None: # then autodetect type
-        if hasattr(value, "typename"):
-            # See RemoteReference for example
-            htype = TYPE_MAP[value.typename] 
+        if hasattr(value, "__class__"):  
+            htype = TYPE_MAP[value.__class__] 
         else:            
-            htype = TYPE_MAP[type(value)]    
+            htype = TYPE_MAP[type(value)]
     assert not htype is None
     htype.write(ctx, value)       
 
@@ -275,13 +274,11 @@ types.append(UnicodeString)
 
 class Xml(UTF8Sequence):
     codes = ["X", "x"]
-    ptype = "hessian.Xml"
 types.append(Xml)
 
 
 class Binary(Chunked):    
     codes = ["B", "b"]
-    ptype = "hessian.Binary"
 types.append(Binary)
 
 
@@ -560,9 +557,6 @@ types.append(Reply)
 
 class RemoteReference:
 
-    # class instances do not have class names (AFAIK) so we need this hack
-    typename = "hessian.RemoteReference"
-    
     def __init__(self, url):
         self.url = url
 
@@ -577,7 +571,7 @@ class Remote:
     This feaure is ignored for now."""
     
     codes = ["r"]
-    ptype = RemoteReference.typename
+    ptype = RemoteReference
     
     typename_streamer = TypeName()
     url_streamer = String()
@@ -602,6 +596,11 @@ types.append(Remote)
 def makeTypeMaps(types):
     """ Build maps that allow to find apropriate 
     serializer (by object type) or deserializer (by prefix symbol).
+    
+    If serialized type does not match serializer class (true for 
+    embedded types) then Class.ptype is used. If a type does not have 
+    direct analog in Python (is Hessian - specific) then its serializer
+    is used as type.
     """
     codeMap = {} # type code to streamer map
     typeMap = {} # python type to streamer map
@@ -617,6 +616,8 @@ def makeTypeMaps(types):
         if hasattr(streamer, "ptype"):
             assert not streamer.ptype in typeMap
             typeMap[streamer.ptype] = streamer
+        else:
+            typeMap[streamer.__class__] = streamer
     return codeMap, typeMap
 
 

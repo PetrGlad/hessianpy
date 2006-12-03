@@ -23,8 +23,7 @@
 #
 from hessian.hessian import *
 from hessian.client import *
-from hessian.server import HessianHTTPRequestHandler
-from BaseHTTPServer import HTTPServer
+from hessian.server import HessianHTTPRequestHandler, StoppableHTTPServer
 from StringIO import StringIO
 from time import time
 from threading import Thread
@@ -176,9 +175,12 @@ class TestServer(Thread):
     def run(self):
         print "\nStarting test HTTP server"
         server_address = ('localhost', TEST_PORT)
-        httpd = HTTPServer(server_address, TestHandler)
+        self.httpd = StoppableHTTPServer(server_address, TestHandler)
         print "Serving from ", server_address
-        httpd.serve_forever()
+        self.httpd.serve()
+        
+    def stop(self):
+        self.httpd.stop()
 
 
 def callBlobTest(proxy):    
@@ -225,12 +227,6 @@ def callTestLocal(url):
     callBlobTest(proxy)
     redirectTest(proxy)
     
-    try:
-        print proxy.__str__()
-        assert False # exception should be thrown
-    except AttributeError, e:
-        pass # expected
-        
     if False:
         print "Some performance measurements..."
         count = 500
@@ -239,9 +235,9 @@ def callTestLocal(url):
             proxy.hello()
         fin = time()
         print "One call takes", 1000.0 * (fin - start) / count, "mSec."        
-        
-    # TODO: How can we kill server while it's waiting on socket?
-    srv = None    
+
+    srv.stop()
+    proxy.nothing() # XXX force accept loop so thread exits sooner :)
 
 
 def callTestPublic(url):
@@ -307,9 +303,9 @@ if __name__ == "__main__":
         callTestLocal("http://localhost:%d/" % TEST_PORT)
         sslTest()
         
-        # Following URL is unavailable at the time of 0.5.4 release        
         print "Warning: Test with public service is disabled."
-        # callTestPublic("http://www.caucho.com/hessian/test/basic/")        
+        # Following URL seems to be unavailable anymore
+        # callTestPublic("http://www.caucho.com/hessian/test/basic/")
         
         print "\nTests passed."
         

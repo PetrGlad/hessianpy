@@ -30,6 +30,24 @@ from StringIO import StringIO
 __revision__ = "$Rev$"
 
 
+def deref(obj, auth):
+    "Replace hessian.RemoteReference with live proxy"
+    if hasattr(obj, "__class__") \
+           and obj.__class__ == hessian.RemoteReference:
+        return HessianProxy(obj.url, auth)
+    else:
+       return obj
+
+                                                   
+def drain(obj):
+    "Replace Hessian proxy with hessian.RemoteReference"
+    if hasattr(obj, "__class__") \
+           and obj.__class__ == HessianProxy:
+        return hessian.RemoteReference(obj.url)
+    else:
+        return obj
+
+
 class Method:
     "Encapsulates the method to be called"
     def __init__(self, invoker, method):
@@ -43,8 +61,6 @@ class HessianProxy:
     """ A Hessian Proxy Class.
     Supported transport mechanisms are pluggable and are defined in transports.py
     """
-
-    typename = "client.HessianProxy"
     
     def __init__(self, url, authdata = {                       
                         "username": "", 
@@ -52,9 +68,6 @@ class HessianProxy:
         self.url = url
         url_tuple  = urlparse.urlparse(url)
         protocol = url_tuple[0]
-        #host_with_port = url_tuple[1]
-        #path = "%s?%s" % (url_tuple[2], url_tuple[4])
-        #host, port = split_host_and_port(host_with_port)        
         
         self._authdata = authdata
         transport_class = transports.getTransportForProtocol(protocol)
@@ -63,7 +76,7 @@ class HessianProxy:
     def __invoke(self, method, params):        
         request = StringIO()        
         hessian.writeObject(
-                            hessian.WriteContext(request, self.drain), 
+                            hessian.WriteContext(request, drain), 
                             (method, [], params), 
                             hessian.Call())
         
@@ -71,8 +84,8 @@ class HessianProxy:
         request.seek(0)
         response = self._transport.request(request)
 
-        # this will retain same credential for all interfaces we are working with
-        deref_f = lambda x : self.deref(x, self._authdata)
+        # this will retain same credentials for all interfaces we are working with
+        deref_f = lambda x : deref(x, self._authdata)
         
         ctx = hessian.ParseContext(response, deref_f)
         (headers, status, value) = hessian.Reply().read(ctx, ctx.read(1))
@@ -81,28 +94,12 @@ class HessianProxy:
             raise Exception(value) 
         else:
             return value
-            
+        
+    def __str__(self):
+        return "%s(%s)" % (self.__class__.__name__, `self.url`)
+    
+    def __repr__(self):
+        return "%s(%s, %s)" % (self.__class__.__name__, `self.url`, `self._authdata`)
+    
     def __getattr__(self, name):
-        if name[:2] == "__" and name[-2:] == "__":
-            # exclude special methods from remote invocation as it 
-            # causes more trouble than helps            
-            
-            raise AttributeError("No such attribute '%s'" % name)
-        else:
-            return Method(self.__invoke, name)
-
-    @staticmethod
-    def deref(obj, auth):
-        "Replace hessian.RemoteReference with live proxy"
-        if hasattr(obj, "typename") and obj.typename == "hessian.RemoteReference":
-           return HessianProxy(obj.url, auth)
-        else:
-           return obj
-                                                       
-    @staticmethod
-    def drain(obj):
-        "Replace Hessian proxy with hessian.RemoteReference"
-        if hasattr(obj, "typename") and obj.typename == "client.HessianProxy":
-            return hessian.RemoteReference(obj.url)
-        else:
-            return obj
+        return Method(self.__invoke, name)
