@@ -57,6 +57,7 @@ class Method:
     def __call__(self, *args):
         return self.invoker(self.method, args)
 
+
 class HessianProxy:
     """ A Hessian Proxy Class.
     Supported transport mechanisms are pluggable and are defined in transports.py

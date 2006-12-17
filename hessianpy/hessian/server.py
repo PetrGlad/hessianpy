@@ -6,10 +6,6 @@
 # Protocol specification can be found here:
 # http://www.caucho.com/resin-3.0/protocols/hessian-1.0-spec.xtp
 #
-# HTTPS pieces ofcode is based on receipe "Simple HTTP server supporting 
-# SSL secure communications" by Sébastien Martini published at ActiveState 
-# Programmer Network.
-#
 # Copyright 2006 Petr Gladkikh (batyi at sourceforge net)
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
@@ -86,7 +82,7 @@ class HessianHTTPRequestHandler(BaseHTTPRequestHandler):
 
 class StoppableHTTPServer(HTTPServer):
     """
-    Code taken from Python CookBook
+    Code adapted from Python CookBook
     http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/425210
     """
     

@@ -1,0 +1,6 @@
+include *.txt
+include hessian/test/server.pem
+prune *.svn
+prune .settings
+prune site
+

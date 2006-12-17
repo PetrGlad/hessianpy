@@ -90,7 +90,7 @@ def writeVersion(stream):
 
     
 class SimpleValue:
-    "Single valued types (None)"
+    "Single valued types (e.g. None)"
     def read(self, ctx, prefix):
         assert prefix in self.codes
         return self.value

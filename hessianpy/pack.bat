@@ -1,1 +1,0 @@
-7z -tzip -xr!.svn -xr!*.pyc a hessianpy-0.5.5.zip hessian

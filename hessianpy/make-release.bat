@@ -1,1 +1,1 @@
-7z -tzip -xr!.svn -xr!*.pyc a hessianpy-0.5.4.zip hessian
+python setup.py sdist --force-manifest
