@@ -4,5 +4,3 @@
 * Implement simple way of specifying Hessian type to be serialized.
 Now it is very tricky to make the library to send XML or Binary.
 Binary types probably should be handled as streams.
-
-* Speed up UTF8 conversions (can we use standard encoders for that?).

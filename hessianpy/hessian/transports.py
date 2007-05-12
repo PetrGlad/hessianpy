@@ -42,7 +42,8 @@ AUTH_BASIC = "basic"
 
 
 def getTransportForProtocol(protocol):
-    """ Returns the appropriate transport for a protocol's URL scheme
+    """ Returns the appropriate transport for a protocol's URL scheme.
+    Raises KeyError if no appropriate protocol found.
     """
     return {
         "http": BasicUrlLibTransport, 

@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(name='HessianPy',
-	version='0.5.5',
+	version='0.5.6',
 	description="Implementation of Hessian RPC protocol",
 	author="Petr Gladkikh",
 	author_email="batyi@users.sourceforge.net",

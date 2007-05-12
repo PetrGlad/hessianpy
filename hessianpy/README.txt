@@ -14,7 +14,8 @@ and you may need to add it separately (namely add library PYTHON_HOME/DLLs/_ssl.
 
 	REQUIREMENTS
 	
-Python 2.4 or higher (download it from http://python.org/).
+Python 2.4 or higher (2.5 recommended). 
+You can download Python from http://python.org/.
 
 
 	INSTALLATION
@@ -29,6 +30,10 @@ For more details see "Installing Python Modules" section in Python's documentati
 
 
 	RELEASE NOTES
+	
+v0.5.6 2007-05-13
+	1. Improved performance of UTF8 encoder/decoder. It is now 10-50% faster. 
+	CPython 2.5 is now recommended (although 2.4 is still supported).
 	
 v0.5.5 2006-12-17
 	1. Added standard module installation script. Files rearranged in more standard way. 

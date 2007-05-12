@@ -184,8 +184,8 @@ class TestServer(Thread):
 
 
 def callBlobTest(proxy):    
-    size = 2**17
-    big = "*" * size
+    size = 2**11
+    big = u"ЦЦ*муха" * size
     r = proxy.echo(big)
     assert big == r
     

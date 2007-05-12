@@ -26,13 +26,19 @@
 #
 __revision__ = "$Rev: 44 $"
 
+# Masks that select code point bits in 1-st byte of UTF8 sequence
+BYTE_MASKS = [0x7f, 0x1f, 0x0f, 0x07]
 
-def readSymbol(sourceFun):
+# Bounds of code point ranges that need different number of bytes in UTF8 sequence
+BYTE_RANGES = [0x0000007F, 0x000007FF, 0x0000FFFF, 0x001FFFFF]
+
+# setup module:
+def readSymbolPy(sourceFun):
     first = sourceFun(1)
     if len(first) == 0:
         return None
     b = ord(first)
-    # number of 1's: 0, 2, 3, 4
+    # count number of 1's: 0, 2, 3, 4
     byteLen = 1
     while b & 0x80:
         byteLen += 1        
@@ -41,10 +47,10 @@ def readSymbol(sourceFun):
             raise Exception("UTF-8 Error: Incorrect UTF-8 encoding"
                             +" (first octet of symbol = 0x%x)" % ord(first))        
     elif byteLen > 1:
-            byteLen -= 1            
-    mask = [0x7f, 0x1f, 0x0f, 0x07] [byteLen - 1]
+            byteLen -= 1    
+    mask = BYTE_MASKS[byteLen - 1]
     codePoint = ord(first) & mask
-    for k in range(1, byteLen):
+    for k in xrange(1, byteLen):
         ch = sourceFun(1)
         if len(ch) == 0:
             raise Exception("UTF-8 Error: Incorrect UTF-8 encoding"
@@ -55,9 +61,9 @@ def readSymbol(sourceFun):
     return codePoint
 
 
-def symbolToUTF8(codePoint):    
+def symbolToUTF8Py(codePoint):    
     byteLen = 1
-    for k in [0x0000007F, 0x000007FF, 0x0000FFFF, 0x001FFFFF]:
+    for k in BYTE_RANGES:
         if codePoint <= k:
             break
         byteLen += 1
@@ -90,8 +96,22 @@ def symbolToUTF8(codePoint):
     # print result
     
     return result
-        
 
+import sys
+
+if sys.version_info[0:2] >= (2, 5):
+    import codecs
+    
+    utf8Codec = codecs.lookup("UTF-8")    
+    encoder = utf8Codec.incrementalencoder()
+    
+    readSymbol = readSymbolPy
+    symbolToUTF8 = lambda codePoint : encoder.encode(unichr(codePoint))
+else:
+    readSymbol = readSymbolPy
+    symbolToUTF8 = symbolToUTF8Py
+
+ 
 def test():
     # TODO Test exceptions    
     from StringIO import StringIO
@@ -120,6 +140,29 @@ def test():
     assert s == src
 
 
+def testPerformance():
+    from StringIO import StringIO
+    from time import time as now
+    src = u"(Цой|punk|Ленин)Жив!" * 20000
+    u0 = src.encode("UTF-8")
+    
+    tStart = now()
+    for c in src:
+        symbolToUTF8(ord(c))
+    tEncode = now() - tStart
+    print "Encoding",  (len(src) / tEncode), "symbols/sec"
+    
+    tStart = now()
+    s_read = StringIO(u0)    
+    while True:
+        repr = readSymbol(s_read.read)
+        if repr == None:
+            break 
+    tDecode = now() - tStart       
+    print "Decoding",  (len(src) / tDecode), "symbols/sec"
+
+
 if __name__ == "__main__":
         test()
+        testPerformance()
         print "Tests passed."

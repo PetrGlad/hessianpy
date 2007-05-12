@@ -216,12 +216,8 @@ class Chunked(ShortSequence):
 
 
 class UTF8Sequence(Chunked):
-    """This class fixes interoperability issue with existing Java library.
-    (Counts length by chars not by octets)
-    Although I believe that we should use Chunked for every sequence
-    (see UTF8Sequence descendants)
-    
-    TODO: Share code with Chunked (if possible)
+    """We can not use Chunked as base as Chunked counts octets in stream while 
+    UTF8 based sequences count lengths in symbols.    
     """
     
     def readChunk(self, ctx, prefix):
