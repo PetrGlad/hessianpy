@@ -26,11 +26,14 @@
 #
 __revision__ = "$Rev: 44 $"
 
-# Masks that select code point bits in 1-st byte of UTF8 sequence
+# Masks that select code point bits in 1-st byte of UTF8 code point sequence
 BYTE_MASKS = [0x7f, 0x1f, 0x0f, 0x07]
 
 # Bounds of code point ranges that need different number of bytes in UTF8 sequence
 BYTE_RANGES = [0x0000007F, 0x000007FF, 0x0000FFFF, 0x001FFFFF]
+
+# bit-marks for first byte in UTF8 code point sequence that declare length of sequence
+FIRST_MARKS = [0, 0xc0, 0xe0, 0xf0]
 
 # setup module:
 def readSymbolPy(sourceFun):
@@ -77,7 +80,7 @@ def symbolToUTF8Py(codePoint):
     k = byteLen - 1
     if byteLen > 3:
         result[k] = chr(c & 0x3f | 0x80)
-        c >>= 6        
+        c >>= 6
         k -= 1
     if byteLen > 2:
         result[k] = chr(c & 0x3f | 0x80)
@@ -88,8 +91,7 @@ def symbolToUTF8Py(codePoint):
         c >>= 6
         k -= 1
         
-    firstMark = [0, 0xc0, 0xe0, 0xf0] [byteLen - 1]
-    result[0] = chr(firstMark | c)
+    result[0] = chr(FIRST_MARKS[byteLen - 1] | c)
     
     # print "thisByte = %x; mark = %x; firstMark = %x" % ((mark | codePoint & 0x7f), mark, firstMark)
     # print "firstMark = %x" % firstMark
