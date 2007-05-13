@@ -1,5 +1,5 @@
 This directory contains hessian protocol implementation.
-Author Petr Gladkikh (batyi at sourceforge net)
+Author Petr Gladkikh (batyi at users.sourceforge.net)
 
 See http://www.caucho.com/resin-3.0/protocols/hessian.xtp for hessian 
 protocol introduction. Protocol specification is at 
@@ -33,7 +33,7 @@ For more details see "Installing Python Modules" section in Python's documentati
 	
 v0.5.6 2007-05-13
 	1. Improved performance of UTF8 encoder/decoder. It is now 10-50% faster. 
-	CPython 2.5 is now recommended (although 2.4 is still supported).
+	2. CPython 2.5 is now recommended (although 2.4 is still supported).
 	
 v0.5.5 2006-12-17
 	1. Added standard module installation script. Files rearranged in more standard way. 
