@@ -10,7 +10,7 @@
 #  0x00000800 — 0x0000FFFF: 1110xxxx 10xxxxxx 10xxxxxx
 #  0x00010000 — 0x001FFFFF: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
 #
-# Copyright 2006 Petr Gladkikh (batyi at sourceforge net)
+# Copyright 2006 Petr Gladkikh (batyi at users sourceforge net)
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.

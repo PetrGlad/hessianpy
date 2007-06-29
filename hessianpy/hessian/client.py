@@ -6,8 +6,8 @@
 # Protocol specification can be found here:
 # http://www.caucho.com/resin-3.0/protocols/hessian-1.0-spec.xtp
 #
-# Copyright 2005, 2006 Petr Gladkikh (batyi at sourceforge net)
-# Copyright 2006 Bernd Stolle (thebee at sourceforge net)
+# Copyright 2005, 2006 Petr Gladkikh (batyi at users sourceforge net)
+# Copyright 2006 Bernd Stolle (thebee at users sourceforge net)
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.

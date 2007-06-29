@@ -7,7 +7,7 @@
 #
 # This file contains some tests for HessianPy library.
 #
-# Copyright 2005 Petr Gladkikh (batyi at mail ru)
+# Copyright 2005 Petr Gladkikh (batyi at users sourceforge net)
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
