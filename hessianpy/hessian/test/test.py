@@ -33,6 +33,14 @@ import urllib2
 
 __revision__ = "$Rev$"
 
+
+def autoLoopBackTest(value):
+    s = StringIO()
+    writeObject(WriteContext(s), value, None)    
+    s.seek(0)    
+    r = readObjectByPrefix(ParseContext(s), s.read(1))
+    assert r == value
+    
     
 def loopBackTest(classRef, value):
     s = StringIO()
@@ -76,8 +84,7 @@ def loopbackTest():
     loopBackTest(Double, 0.0)
     loopBackTest(Double, 123.321)
     loopBackTest(String, "")
-    loopBackTest(String, "Nice to see ya!")
-    loopBackTest(Binary, "\x07Nice to see ya! )*)(*РєР°РјРїСѓС‚РµСЂ&)(*\x00&)(*&)(*&&*\x09^%&^%$%^$%$!#@!")
+    loopBackTest(String, "Nice to see ya!")    
     loopBackTest(Array, [])
     loopBackTest(Array, ["123", 1])
     loopBackTest(Array, [3, 3])
@@ -86,12 +93,18 @@ def loopbackTest():
     loopBackTest(Map, {})
     loopBackTest(Map, {1 : 2})
     loopBackTest(Remote, RemoteReference("yo://yeshi/yama"))
-    loopBackTestTyped(Xml, u"<hello who=\"Небольшой текст тут!\"/>")
-    
+        
     loopBackTestTyped(Tuple, (), list)
     loopBackTestTyped(Tuple, (1,), list)
-    loopBackTestTyped(Tuple, ("equivalence", 1, {"":[]}), list)    
-
+    loopBackTestTyped(Tuple, ("equivalence", 1, {"":[]}), list)
+    
+   
+def testHessianTypes():
+    autoLoopBackTest(BinaryArray(\
+        "\x07Nice to see ya! )*)(*РєР°РјРїСѓС‚РµСЂ&)(*\x00&)(*&)(*&&*\x09^%&^%$%^$%$!#@!"))
+    autoLoopBackTest(XmlString(u"<hello who=\"Небольшой текст тут!\"/>"))    
+    #loopBackTest(BinaryArray(u"asdasdfasdfasdfsdf"))
+    
 
 def serializeCallTest():    
     loopBackTest(Call, ("aaa", [], []))
@@ -103,11 +116,13 @@ def serializeCallTest():
                         [{"name" : "beaver", "value" : [987654321, 2, 3.0] }]))
 
 
-def serializeReplyTest():    
+def serializeReplyAndFaultTest():    
     loopBackTestTyped(Reply, ([], True, 1))
     loopBackTestTyped(Reply, ([], True, {"code" : [1, 2]}))
     loopBackTestTyped(Reply, ([], False, {}))
     loopBackTestTyped(Reply, ([], False, {"code" : "value"}))
+    
+    loopBackTestTyped(Fault, {"message":"an error description", "line":23})
 
 
 def referenceTest():
@@ -221,13 +236,13 @@ def callTestLocal(url):
         pass    
     
     # What about UTF-8?
-    padonkMessage = u"Пррревед абонентеги!"
+    padonkMessage = u"Пррревед обонентеги!"
     assert padonkMessage == proxy.echo(padonkMessage)
     
     callBlobTest(proxy)
     redirectTest(proxy)
     
-    if True:
+    if False:
         print "Some performance measurements..."
         count = 500
         start = time()
@@ -294,8 +309,10 @@ if __name__ == "__main__":
         loopbackTest()
         print '.', 
         serializeCallTest()
+        print '.',
+        testHessianTypes()
         print '.', 
-        serializeReplyTest()
+        serializeReplyAndFaultTest()
         print '.', 
         referenceTest()
         print '.', 

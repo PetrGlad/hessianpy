@@ -1,11 +1,4 @@
-    TODO
-
-* Binary types should be handled as streams.
-
     NICE TO HAVE
 
 * Implement simple way of specifying Hessian type to be serialized.
 Now it is very tricky to make the library to send XML or Binary.
-
-* Transparent exception handling across remote call would be desirable 
-(translate or reformat returned error message into usual Python stack trace).

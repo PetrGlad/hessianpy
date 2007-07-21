@@ -55,20 +55,22 @@ def readObject(ctx):
     return readObjectByPrefix(ctx, prefix)
 
 
-def readObjectByPrefix(ctx, prefix):    
+def readObjectByPrefix(ctx, prefix):
     return ctx.post(CODE_MAP[prefix].read(ctx, prefix))
 
 
-def writeObject(ctx, value, htype):
-    "Write value with specified type"
+def writeObject(ctx, value, hessianTypeObject):
+    "Write value with specified type"   
     value = ctx.pre(value)
-    if htype is None: # then autodetect type
-        if hasattr(value, "__class__"):  
-            htype = TYPE_MAP[value.__class__] 
-        else:            
-            htype = TYPE_MAP[type(value)]
-    assert not htype is None
-    htype.write(ctx, value)       
+    if hessianTypeObject is None: # then autodetect type
+        # type is not explicitly set. Trying to autodetect.
+        if hasattr(value, "__class__"):            
+            hessianTypeObject = TYPE_MAP[value.__class__] 
+        else:
+            # should never get here if is onpython 2.3 or later
+            hessianTypeObject = TYPE_MAP[type(value)]
+    assert not hessianTypeObject is None
+    hessianTypeObject.write(ctx, value)
 
 
 def readShort(stream):
@@ -268,13 +270,31 @@ class UnicodeString(String):
 types.append(UnicodeString)
 
 
+class XmlString(unicode):
+    "Represents value of hessian's XML string"
+    pass
+
+
 class Xml(UTF8Sequence):
     codes = ["X", "x"]
+    ptype = XmlString
+    
+    def read(self, ctx, prefix):
+        return XmlString(UTF8Sequence.read(self, ctx, prefix))
 types.append(Xml)
+
+
+class BinaryArray(str):
+    "Represents value of hessian's binary sequence"
+    pass
 
 
 class Binary(Chunked):    
     codes = ["B", "b"]
+    ptype = BinaryArray
+    
+    def read(self, ctx, prefix):
+        return BinaryArray(Chunked.read(self, ctx, prefix))
 types.append(Binary)
 
 
@@ -496,7 +516,8 @@ class Fault:
         ctx.write(self.codes[0])
         for k, v in fault.items():
             writeObject(ctx, k, None)
-            writeObject(ctx, v, None)            
+            writeObject(ctx, v, None)
+        ctx.write("z")            
 types.append(Fault)
 
 
@@ -652,10 +673,19 @@ class WriteContext:
             self.count += 1
             return -1
 
-            
-if __name__ == "__main__":
+
+def printRegisteredTypes():
+    "Debugging helper"
     print "Registered types:"
     for t in types:
-        print t, 
-        for c in t.codes: print c, 
-        print
+        print t, "[", 
+        for c in t.codes: print c,         
+        print "]",
+        if hasattr(t, "ptype"):
+            print t.ptype
+        else: 
+            print
+            
+                    
+if __name__ == "__main__":
+    printRegisteredTypes()

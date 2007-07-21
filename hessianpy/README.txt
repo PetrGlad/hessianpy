@@ -4,7 +4,9 @@ Author Petr Gladkikh (batyi at users.sourceforge.net)
 See http://www.caucho.com/resin-3.0/protocols/hessian.xtp for hessian 
 protocol introduction. Protocol specification is at 
 http://www.caucho.com/resin-3.0/protocols/hessian-1.0-spec.xtp
-See hello.py for sample code.
+See hello.py for sample code. If you need to send Hessian's Xml or binary,
+then construct hessian.hessian.XmlString or hessian.hessian.BinaryArray 
+respectively and pass them as remote call parameters.  
 
 Note that (optional) HTTPS test requires OpenSSL library (see http://openssl.org) 
 and wrapper pyOpenSSL (see http://pyopenssl.sourceforge.net).
