@@ -32,6 +32,10 @@ For more details see "Installing Python Modules" section in Python's documentati
 
 
 	RELEASE NOTES
+
+v0.6.0 2007-07-22
+	1. Corrected serialization of failure result.
+	2. Client can now specify Hessian's XML and binary types.
 	
 v0.5.6 2007-05-13
 	1. Improved performance of UTF8 encoder/decoder. It is now 10-50% faster. 

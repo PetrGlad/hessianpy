@@ -8,8 +8,9 @@ setup(name='HessianPy',
 	url="http://hessianpy.sourceforge.net",
 	license="Apache License 2.0",
 	platforms="Platform independent",	
-	long_description="""Hessian is platform independent binary RPC (remote procedure call) protocol.
-See http://www.caucho.com/resin-3.0/protocols/hessian.xtp for more detailed description.""",
+	long_description="""HessianPy is an implementation of Hessian protocol. Hessian is platform
+independent binary RPC (remote procedure call) protocol (see 
+http://www.caucho.com/resin-3.0/protocols/hessian.xtp for more detailed description).""",
 	
 	packages=['hessian', 'hessian.test'],
     package_data={'hessian.test': ['server.pem']},
