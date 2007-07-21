@@ -125,7 +125,7 @@ def referenceTest():
 # remote call tests
 
 
-SECRET_MESSAGE = "Hello, from HessianPy!"
+SECRET_MESSAGE = "Hello from HessianPy!"
 TEST_PORT = 7777
 
 
@@ -227,7 +227,7 @@ def callTestLocal(url):
     callBlobTest(proxy)
     redirectTest(proxy)
     
-    if False:
+    if True:
         print "Some performance measurements..."
         count = 500
         start = time()

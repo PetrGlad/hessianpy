@@ -206,7 +206,7 @@ class Chunked(ShortSequence):
         pos = 0
         while pos < length - Chunked.chunk_size:
             ctx.write(self.codes[1])
-            writeShort(ctx, chunk_size)
+            writeShort(ctx, Chunked.chunk_size)
             ctx.write(value[pos : pos + Chunked.chunk_size])
             pos += Chunked.chunk_size
         # write last chunk
