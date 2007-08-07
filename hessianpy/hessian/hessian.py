@@ -524,7 +524,7 @@ types.append(Fault)
 class Reply:
     "Result of remote call."
     
-    """Note "Remote" code clashes with "Reply" code 
+    """Note that "Remote" code clashes with "Reply" code 
     and Reply is always read explicitly. 
     Thus do not register it in global type map. """
     autoRegister = False
@@ -541,9 +541,9 @@ class Reply:
         prefix = ctx.read(1)
         # parse headers
         headers = []
-        while prefix in self.header_streamer.codes:
-            headers.append(self.header_streamer.read())
-            prefix = ctx.read(1)           
+        while prefix == self.header_streamer.codes[0]:
+            headers.append(self.header_streamer.read(ctx, prefix))
+            prefix = ctx.read(1)        
 
         succseeded = not prefix in self.fault_streamer.codes
         
@@ -551,7 +551,7 @@ class Reply:
             result = readObjectByPrefix(ctx, prefix)
             prefix = ctx.read(1)
             if prefix != 'z':
-                raise "No closing marker in reply"
+                raise "No closing marker in reply."
         else:
             result = self.fault_streamer.read(ctx, prefix)
             # closing "z" is already read by Fault.read

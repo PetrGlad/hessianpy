@@ -111,7 +111,9 @@ def serializeCallTest():
     loopBackTest(Call, ("aaa", [], [1]))
     loopBackTest(Call, ("aaa", [], ["ddd", 1]))
     loopBackTest(Call, ("aaa", [("type", 1)], []))
-    loopBackTest(Call, ("aaa", [("type", "isolated")], [23]))
+    loopBackTest(Call, ("aaa", [("headerName", "headerValue")], [23]))
+    loopBackTest(Call, ("aaa", [("headerName", "headerValue"), 
+                               ("headerName2", "headerValue2")], [23]))
     loopBackTest(Call, ("aaa", [], \
                         [{"name" : "beaver", "value" : [987654321, 2, 3.0] }]))
 
@@ -121,6 +123,10 @@ def serializeReplyAndFaultTest():
     loopBackTestTyped(Reply, ([], True, {"code" : [1, 2]}))
     loopBackTestTyped(Reply, ([], False, {}))
     loopBackTestTyped(Reply, ([], False, {"code" : "value"}))
+    
+    loopBackTestTyped(Reply, ([("headerName", "headerValue")], True, 33))
+    loopBackTestTyped(Reply, ([("headerName", "headerValue"), 
+                               ("headerName2", "headerValue2")], True, 33))
     
     loopBackTestTyped(Fault, {"message":"an error description", "line":23})
 
