@@ -2,7 +2,7 @@
 #
 # This file contains UTF8 manipulation code.
 # (It would be nice to use standard encoders, but they do not 
-# allow to read symbol by symbol.)
+# allow reading symbol by symbol.)
 #
 # Unicode UTF-8
 #  0x00000000 — 0x0000007F: 0xxxxxxx

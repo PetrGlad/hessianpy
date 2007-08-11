@@ -91,7 +91,7 @@ class HessianProxy:
         ctx = hessian.ParseContext(response, deref_f)
         (headers, status, value) = hessian.Reply().read(ctx, ctx.read(1))
         if not status:
-            # value is a Hessian error description
+            # value is a description of remote call
             raise Exception(value) 
         else:
             return value

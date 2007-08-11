@@ -1,4 +1,3 @@
-# -*- coding: UTF-8 -*-
 #
 # Hessian protocol implementation
 # This file contains simple RPC server code.
@@ -6,7 +5,7 @@
 # Protocol specification can be found here:
 # http://www.caucho.com/resin-3.0/protocols/hessian-1.0-spec.xtp
 #
-# Copyright 2006 Petr Gladkikh (batyi at users sourceforge net)
+# Copyright 2006-2007 Petr Gladkikh (batyi at users sourceforge net)
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -122,8 +121,7 @@ class TestHandler(HessianHTTPRequestHandler):
                 
 if __name__ == "__main__":
     
-    # Sample code 
-    
+    # Example code     
     print "Starting test server"
     server_address = ('localhost', 9001)
     httpd = StoppableHTTPServer(server_address, TestHandler)

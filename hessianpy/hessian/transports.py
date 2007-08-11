@@ -6,7 +6,7 @@
 # http://www.caucho.com/resin-3.0/protocols/hessian-1.0-spec.xtp
 #
 # Copyright 2006 Bernd Stolle (thebee at sourceforge net)
-# Copyright 2006 Petr Gladkikh (batyi at users sourceforge net)
+# Copyright 2006-2007 Petr Gladkikh (batyi at users sourceforge net)
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -33,9 +33,10 @@ import base64
 import httplib
 from StringIO import StringIO
 import urllib2
+from common import HessianError
 
 __revision__ = "$Rev$"
-__version__ = "0.5.4"
+__version__ = "0.6.0"
 
 
 AUTH_BASIC = "basic"
@@ -68,7 +69,8 @@ class HessianTransport:
 
     def request(self, outstream):
         " Send stream to server "
-        raise Exception("Method is not implemented")
+        raise HessianError("Hessian transport is incomplete:"
+                           " Method is not implemented")
     
     
 class BasicUrlLibTransport(HessianTransport):
@@ -76,36 +78,32 @@ class BasicUrlLibTransport(HessianTransport):
     Basic authentication scheme is used. """
     
     def __init__(self, uri, credentials):
-
-        # self._credentials = None # debug        
-
         HessianTransport.__init__(self, uri, credentials)
         # print "init:uri:", uri, "; cred:", self._credentials # debug
                 
-        if (self._credentials != None):
-            
+        if (self._credentials != None):            
             # TODO Make tests for authorization
             
             pman = urllib2.HTTPPasswordMgrWithDefaultRealm()
             auth_handler = urllib2.HTTPBasicAuthHandler(pman)            
             auth_handler.add_password(None, # default realm
                                       uri, 
-                                      self._credentials['username'], 
-                                      self._credentials['password'])
+                                      self._credentials["username"], 
+                                      self._credentials["password"])
             
             # TODO Add digest authorization handler here? 
             # HTTPDigestAuthHandler
             
             self._opener = urllib2.build_opener(auth_handler)
+            
+            # Following code allows sending authorization information in advance,
+            # so single TCP request will suffice. Without it we'll rely on HTTP's 
+            # authorization required response and authorization handlers.            
+            # self._opener.addheaders["Authorization"] = "Basic %s" % base64.encodestring(
+            #    "%s:%s" % (credentials["username"], 
+            #               credentials["password"])).rstrip()
         else:
             self._opener = urllib2.build_opener()        
-# Following code would allow send authorization information in advance,
-# so single TCP request will suffice. Without it we'll rely on HTTP's 
-# authorization required response and authorization handlers.
-#        # store username and password for later use
-#        self.opener.addheaders["Authorization"] = "Basic %s" % base64.encodestring(
-#             "%s:%s" % (credentials["username"], 
-#             credentials["password"])).rstrip() 
     
   
     def request(self, outstream):
@@ -113,8 +111,8 @@ class BasicUrlLibTransport(HessianTransport):
         req_data = outstream.read()        
         # print "request", map(lambda x : "%02x" % ord(x), req_data[:50]), "\n\t:", req_data[:50] # debug        
         r = urllib2.Request(self._uri, req_data)
-        # r.add_header("Content-Length", len(req))
-        r.add_header('User-agent', 'HessianPy/%s' % __version__)
+        r.add_header("Content-Length", len(req_data))
+        r.add_header("User-agent", "HessianPy/%s" % __version__)
         r.add_header("Content-type", "application/octet-stream")
         
         response = self._opener.open(r)        

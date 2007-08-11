@@ -5,7 +5,7 @@
 # Protocol specification can be found here
 # http://www.caucho.com/resin-3.0/protocols/hessian-1.0-spec.xtp
 #
-# Copyright 2005, 2006 Petr Gladkikh (batyi at users sourceforge net)
+# Copyright 2005-2007 Petr Gladkikh (batyi at users sourceforge net)
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -22,17 +22,13 @@
 from struct import pack, unpack
 from types import StringType
 import UTF8
+from common import HessianError
 
 __revision__ = "$Rev$"
 
 types = []
 CODE_MAP = {}
 TYPE_MAP = {}
-
-
-class HessianError(Exception):
-    "This exception indicates a runtime error in 'hessian' module"
-    pass
 
 
 class ValueStreamer:
@@ -67,7 +63,7 @@ def writeObject(ctx, value, hessianTypeObject):
         if hasattr(value, "__class__"):            
             hessianTypeObject = TYPE_MAP[value.__class__] 
         else:
-            # should never get here if is onpython 2.3 or later
+            # should never get here if is on Python 2.3 or later
             hessianTypeObject = TYPE_MAP[type(value)]
     assert not hessianTypeObject is None
     hessianTypeObject.write(ctx, value)
@@ -551,7 +547,7 @@ class Reply:
             result = readObjectByPrefix(ctx, prefix)
             prefix = ctx.read(1)
             if prefix != 'z':
-                raise "No closing marker in reply."
+                raise HessianError("No closing marker in reply.")
         else:
             result = self.fault_streamer.read(ctx, prefix)
             # closing "z" is already read by Fault.read
