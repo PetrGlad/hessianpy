@@ -1,4 +1,1 @@
-    NICE TO HAVE
 
-* Implement simple way of specifying Hessian type to be serialized.
-Now it is very tricky to make the library to send XML or Binary.
