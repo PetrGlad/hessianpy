@@ -1,7 +1,8 @@
+import hessian
 from distutils.core import setup
 
 setup(name='HessianPy',
-	version='0.6',
+	version=hessian.__version__,
 	description="Implementation of Hessian RPC protocol",
 	author="Petr Gladkikh",
 	author_email="batyi@users.sourceforge.net",
