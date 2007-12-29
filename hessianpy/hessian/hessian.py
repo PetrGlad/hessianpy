@@ -226,7 +226,7 @@ class UTF8Sequence(Chunked):
         return result
             
     def read(self, ctx, prefix):
-        result = "";
+        result = u"";
         while (prefix == self.codes[1]):
             result += self.readChunk(ctx, prefix)
             prefix = ctx.read(1)
@@ -255,13 +255,8 @@ class UTF8Sequence(Chunked):
         self.writeChunk(ctx, value[pos : ])
 
     
-class String(UTF8Sequence):
+class UnicodeString(UTF8Sequence):
     codes = ["S", "s"]
-    ptype = str
-types.append(String)
-
-
-class UnicodeString(String):
     ptype = unicode
 types.append(UnicodeString)
 
@@ -280,17 +275,12 @@ class Xml(UTF8Sequence):
 types.append(Xml)
 
 
-class BinaryArray(str):
-    "Represents value of hessian's binary sequence"
-    pass
-
-
 class Binary(Chunked):    
     codes = ["B", "b"]
-    ptype = BinaryArray
+    ptype = str
     
     def read(self, ctx, prefix):
-        return BinaryArray(Chunked.read(self, ctx, prefix))
+        return Chunked.read(self, ctx, prefix)
 types.append(Binary)
 
 
@@ -587,7 +577,7 @@ class Remote:
     ptype = RemoteReference
     
     typename_streamer = TypeName()
-    url_streamer = String()
+    url_streamer = UnicodeString()
         
     def read(self, ctx, prefix):        
         assert prefix in self.codes
