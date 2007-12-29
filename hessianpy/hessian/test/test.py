@@ -83,8 +83,8 @@ def loopbackTest():
     loopBackTest(Long, 2403914806071207089L)
     loopBackTest(Double, 0.0)
     loopBackTest(Double, 123.321)
-    loopBackTest(String, "")
-    loopBackTest(String, "Nice to see ya!")    
+    loopBackTest(UnicodeString, "")
+    loopBackTest(UnicodeString, "Nice to see ya!")    
     loopBackTest(Array, [])
     loopBackTest(Array, ["123", 1])
     loopBackTest(Array, [3, 3])
@@ -98,12 +98,12 @@ def loopbackTest():
     loopBackTestTyped(Tuple, (1,), list)
     loopBackTestTyped(Tuple, ("equivalence", 1, {"":[]}), list)
     
+    autoLoopBackTest(
+        "\x07Nice to see ya! )*)(*РєР°РјРїСѓС‚РµСЂ&)(*\x00&)(*&)(*&&*\x09^%&^%$%^$%$!#@!")
+    
    
-def testHessianTypes():
-    autoLoopBackTest(BinaryArray(\
-        "\x07Nice to see ya! )*)(*РєР°РјРїСѓС‚РµСЂ&)(*\x00&)(*&)(*&&*\x09^%&^%$%^$%$!#@!"))
+def testHessianTypes():    
     autoLoopBackTest(XmlString(u"<hello who=\"Небольшой текст тут!\"/>"))    
-    #loopBackTest(BinaryArray(u"asdasdfasdfasdfsdf"))
     
 
 def serializeCallTest():    
@@ -261,6 +261,12 @@ def callTestLocal(url):
     proxy.nothing() # XXX force accept loop so thread exits sooner :)
 
 
+def realWorldTest1():
+    import zlib, pickle     
+    payload = zlib.compress(pickle.dumps("blah blah blah"))
+    autoLoopBackTest(payload)
+
+
 def callTestPublic(url):
     try:
         proxy = HessianProxy(url)
@@ -322,6 +328,8 @@ if __name__ == "__main__":
         print '.', 
         referenceTest()
         print '.', 
+        realWorldTest1()
+        print '.',
         
         callTestLocal("http://localhost:%d/" % TEST_PORT)
         sslTest()
