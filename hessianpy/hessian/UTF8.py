@@ -4,11 +4,13 @@
 # (It would be nice to use standard encoders, but they do not 
 # allow reading symbol by symbol.)
 #
+# !!!NOTE!!! Only unicode symbols in 0..65536 are supported
+#
 # Unicode UTF-8
-#  0x00000000 — 0x0000007F: 0xxxxxxx
-#  0x00000080 — 0x000007FF: 110xxxxx 10xxxxxx
-#  0x00000800 — 0x0000FFFF: 1110xxxx 10xxxxxx 10xxxxxx
-#  0x00010000 — 0x001FFFFF: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+#  0x00000000 .. 0x0000007F: 0xxxxxxx
+#  0x00000080 .. 0x000007FF: 110xxxxx 10xxxxxx
+#  0x00000800 .. 0x0000FFFF: 1110xxxx 10xxxxxx 10xxxxxx
+#  0x00010000 .. 0x001FFFFF: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
 #
 # Copyright 2006 Petr Gladkikh (batyi at users sourceforge net)
 #
@@ -26,6 +28,7 @@
 #
 __revision__ = "$Rev: 44 $"
 
+
 # Masks that select code point bits in 1-st byte of UTF8 code point sequence
 BYTE_MASKS = [0x7f, 0x1f, 0x0f, 0x07]
 
@@ -35,32 +38,44 @@ BYTE_RANGES = [0x0000007F, 0x000007FF, 0x0000FFFF, 0x001FFFFF]
 # bit-marks for first byte in UTF8 code point sequence that declare length of sequence
 FIRST_MARKS = [0, 0xc0, 0xe0, 0xf0]
 
-# setup module:
+
+class UTF8Exception(Exception):
+    pass
+
+
 def readSymbolPy(sourceFun):
     first = sourceFun(1)
     if len(first) == 0:
         return None
-    b = ord(first)
-    # count number of 1's: 0, 2, 3, 4
-    byteLen = 1
-    while b & 0x80:
-        byteLen += 1        
-        b <<= 1
-    if byteLen > 4:
-            raise Exception("UTF-8 Error: Incorrect UTF-8 encoding"
-                            +" (first octet of symbol = 0x%x)" % ord(first))        
-    elif byteLen > 1:
-            byteLen -= 1    
-    mask = BYTE_MASKS[byteLen - 1]
-    codePoint = ord(first) & mask
-    for k in xrange(1, byteLen):
-        ch = sourceFun(1)
+    b = ord(first)    
+    if (b & 0x80) == 0x00:
+        return b # ASCII subset        
+
+    mask = 0xf8
+    pattern = 0xf0 
+    byteLen = 4
+    while byteLen > 1:         
+        if (b & mask) == pattern:
+            codePoint = 0xff & (b & ~mask)
+            break
+        byteLen -= 1
+        mask = 0xff & (mask << 1)
+        pattern = 0xff & (pattern << 1)
+    else:  
+         raise UTF8Exception("Incorrect UTF-8 encoding"
+                         + " (first octet of symbol = 0x%x)" % b)    
+    while byteLen > 1:
+        ch = sourceFun(1)        
         if len(ch) == 0:
-            raise Exception("UTF-8 Error: Incorrect UTF-8 encoding"
-                            +" (premature stream end)")
-        codePoint <<= 6        
-        codePoint |= ord(ch) & 0x3f
-        
+            raise UTF8Exception("Incorrect UTF-8 encoding"
+                            + " (premature stream end)")        
+        b = ord(ch)
+        if (b & 0xc0) != 0x80:
+            raise UTF8Exception("Incorrect UTF-8 encoding"
+                        + " (trailing octet of symbol = 0x%x)" % b)
+        codePoint <<= 6
+        codePoint |= b & 0x3f
+        byteLen -= 1        
     return codePoint
 
 
@@ -71,8 +86,8 @@ def symbolToUTF8Py(codePoint):
             break
         byteLen += 1
     else:
-        raise Exception("UTF-8 Error: Can not encode codePoint ["
-                        + codePoint + "] in UTF-8. It is bigger than 0x001FFFFF")
+        raise UTF8Exception("Can not encode codePoint "
+                        + codePoint + " in UTF-8. It is bigger than 0x001FFFFF")
                 
     result = [0] * byteLen  
     
@@ -92,12 +107,8 @@ def symbolToUTF8Py(codePoint):
         k -= 1
         
     result[0] = chr(FIRST_MARKS[byteLen - 1] | c)
-    
-    # print "thisByte = %x; mark = %x; firstMark = %x" % ((mark | codePoint & 0x7f), mark, firstMark)
-    # print "firstMark = %x" % firstMark
-    # print result
-    
     return result
+
 
 import sys
 
@@ -113,9 +124,13 @@ else:
     readSymbol = readSymbolPy
     symbolToUTF8 = symbolToUTF8Py
 
- 
-def test():
-    # TODO Test exceptions    
+
+def bruteDecoderTest():
+    from StringIO import StringIO    
+    for c in xrange(0, 0xffff):        
+        assert readSymbol(StringIO(unichr(c).encode("UTF-8")).read) == c
+         
+def test():    
     from StringIO import StringIO
     src = u"""
     В этом нет ничего нового,
@@ -142,6 +157,24 @@ def test():
     assert s == src
 
 
+def testExceptions():
+    def decodeStr(s):
+        from StringIO import StringIO        
+        s_read = StringIO(s)
+        return readSymbol(s_read.read)
+    def expectException(funcall):
+        try: 
+            funcall()            
+        except Exception:
+            pass
+        else:
+            assert False
+    expectException(lambda: decodeStr("\xff"))
+    expectException(lambda: decodeStr("\x80")) 
+    expectException(lambda: decodeStr("\xc0\x00"))
+    expectException(lambda: decodeStr("\xe0\x80\x00"))
+    
+
 def testPerformance():
     from StringIO import StringIO
     from time import time as now
@@ -155,7 +188,7 @@ def testPerformance():
     print "Encoding",  (len(src) / tEncode), "symbols/sec"
     
     tStart = now()
-    s_read = StringIO(u0)    
+    s_read = StringIO(u0)
     while True:
         repr = readSymbol(s_read.read)
         if repr == None:
@@ -165,6 +198,8 @@ def testPerformance():
 
 
 if __name__ == "__main__":
-        test()
-        testPerformance()
-        print "Tests passed."
+    bruteDecoderTest()
+    test()
+    testExceptions()
+    testPerformance()
+    print "Tests passed."
