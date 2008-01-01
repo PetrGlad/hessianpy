@@ -83,8 +83,9 @@ def loopbackTest():
     loopBackTest(Long, 2403914806071207089L)
     loopBackTest(Double, 0.0)
     loopBackTest(Double, 123.321)
-    loopBackTest(UnicodeString, "")
-    loopBackTest(UnicodeString, "Nice to see ya!")    
+    loopBackTest(UnicodeString, u"")
+    loopBackTest(UnicodeString, u"Nice to see ya! длорфызвабьйтцуикзгшщчсмжячмс.")
+    loopBackTest(UnicodeString, "Nice to see ya!")
     loopBackTest(Array, [])
     loopBackTest(Array, ["123", 1])
     loopBackTest(Array, [3, 3])
@@ -98,6 +99,8 @@ def loopbackTest():
     loopBackTestTyped(Tuple, (1,), list)
     loopBackTestTyped(Tuple, ("equivalence", 1, {"":[]}), list)
     
+    autoLoopBackTest(
+        u"\x07Nice to see ya! )*)(*РєР°РјРїСѓС‚РµСЂ&)(*\x00&)(*&)(*&&*\x09^%&^%$%^$%$!#@!")
     autoLoopBackTest(
         "\x07Nice to see ya! )*)(*РєР°РјРїСѓС‚РµСЂ&)(*\x00&)(*&)(*&&*\x09^%&^%$%^$%$!#@!")
     
@@ -315,24 +318,23 @@ def sslTest():
     import hessian.test.testSecure
     hessian.test.testSecure.testHttps()
      
+def runList(funList):
+    for fn in funList:
+        fn()
+        print '.',
 
 if __name__ == "__main__":
     try:
-        loopbackTest()
-        print '.', 
-        serializeCallTest()
-        print '.',
-        testHessianTypes()
-        print '.', 
-        serializeReplyAndFaultTest()
-        print '.', 
-        referenceTest()
-        print '.', 
-        realWorldTest1()
-        print '.',
-        
-        callTestLocal("http://localhost:%d/" % TEST_PORT)
-        sslTest()
+        runList([
+                 loopbackTest, 
+                 serializeCallTest,
+                 testHessianTypes, 
+                 serializeReplyAndFaultTest, 
+                 referenceTest, 
+                 realWorldTest1,
+                 lambda: callTestLocal("http://localhost:%d/" % TEST_PORT),
+                 sslTest
+                 ])
         
         print "Warning: Test with public service is disabled."
         # Following URL seems to be unavailable anymore
