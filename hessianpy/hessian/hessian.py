@@ -226,7 +226,7 @@ class UTF8Sequence(Chunked):
         return result
             
     def read(self, ctx, prefix):
-        result = u"";
+        result = u""
         while (prefix == self.codes[1]):
             result += self.readChunk(ctx, prefix)
             prefix = ctx.read(1)
