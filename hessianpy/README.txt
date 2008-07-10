@@ -1,9 +1,9 @@
 This directory contains hessian protocol implementation.
 Author Petr Gladkikh (batyi at users.sourceforge.net)
 
-See http://www.caucho.com/resin-3.0/protocols/hessian.xtp for hessian 
-protocol introduction. Protocol specification is at 
-http://www.caucho.com/resin-3.0/protocols/hessian-1.0-spec.xtp
+See http://hessian.caucho.com/ for Hessian protocol introduction.
+Protocol specification is at 
+http://hessian.caucho.com/doc/hessian-1.0-spec.xtp
 See hello.py for sample code. If you need to send Hessian's Xml,
 then construct hessian.hessian.XmlString and pass it as a remote call parameter.
 
@@ -12,16 +12,16 @@ String types are mapped as follows:
     str       binary
     unicode   string   
 
-Note that (optional) HTTPS test requires OpenSSL library (see http://openssl.org) 
-and wrapper pyOpenSSL (see http://pyopenssl.sourceforge.net).
-Note that HTTPS support in Python may not be enabled by default 
-and you may need to add it separately (namely add library PYTHON_HOME/DLLs/_ssl.pyd).
-
 
 	REQUIREMENTS
 	
 Python 2.4 or higher (2.5 recommended). 
-You can download Python from http://python.org/.
+You can download Python interpreter from http://python.org/.
+
+Note that (optional) HTTPS test requires OpenSSL library (see http://openssl.org) 
+and wrapper pyOpenSSL (see http://pyopenssl.sourceforge.net).
+Note that HTTPS support in Python may not be enabled by default 
+and you may need to add it separately (namely add library PYTHON_HOME/DLLs/_ssl.pyd).
 
 
 	INSTALLATION
@@ -36,6 +36,10 @@ For more details see "Installing Python Modules" section in Python's documentati
 
 
 	RELEASE NOTES
+
+v1.0.2 2008-07-10
+	1. Corrected vector length check during serialisation 
+	(bug #2014787, reported by Jeon Chanseok).
 
 v0.6.0 2007-08-07
 	1. Corrected serialization of failure result.
