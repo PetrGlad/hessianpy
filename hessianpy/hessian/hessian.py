@@ -325,7 +325,7 @@ class Array:
         while prefix != "z":        
             result.append(readObjectByPrefix(ctx, prefix))
             prefix = ctx.read(1)
-        assert count == len(result)
+        assert (count == -1) or (count == len(result))
         assert prefix == "z"
         return result
 

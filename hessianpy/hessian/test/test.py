@@ -3,7 +3,7 @@
 # Hessian protocol implementation test
 #
 # Protocol specification can be found here
-# http://www.caucho.com/resin-3.0/protocols/hessian-1.0-spec.xtp
+# http://hessian.caucho.com/doc/hessian-1.0-spec.xtp
 #
 # This file contains some tests for HessianPy library.
 #
@@ -34,26 +34,44 @@ import urllib2
 __revision__ = "$Rev$"
 
 
+def readObjectString(txt):
+    stream = StringIO(txt)
+    return readObjectByPrefix(ParseContext(stream), stream.read(1))
+
+
+def parseData(txt):
+    """Auxiliary function.
+    Takes plain text description of binary data 
+    from protocol specification and returns binary data"""
+    import re
+    result = ""
+    for a in re.split('\s+', txt):
+        if re.match('x[0-9a-f]{2}', a, re.IGNORECASE):            
+            result += chr(int(a[1:], 16))
+        else:
+            result += a    
+    return result
+
+
 def autoLoopBackTest(value):
     s = StringIO()
     writeObject(WriteContext(s), value, None)    
     s.seek(0)    
     r = readObjectByPrefix(ParseContext(s), s.read(1))
     assert r == value
-    
+        
     
 def loopBackTest(classRef, value):
     s = StringIO()
     o = classRef()
     o.write(WriteContext(s), value)
-    # print "[" + s.data + "]" # debug
     s.seek(0)
     r = readObject(ParseContext(s))
     res = False
     try:
         res = r == value
     except RuntimeError, e:
-        # fallback in case of recusion error
+        # Fall-back in case of recursion error
         res = `r` == `value`
         
     assert res
@@ -67,7 +85,6 @@ def loopBackTestTyped(classRef, value, converter = None):
     s = StringIO()
     o = classRef()
     o.write(WriteContext(s), value)
-    # print "T[" + s.data + "]" # debug
     s.seek(0)
     s_in = ParseContext(s)
     if converter != None:
@@ -143,6 +160,23 @@ def referenceTest():
     b = [a, 1]
     a[0] = b
     loopBackTest(Call, ("aaa", [], [b, a]))
+
+    
+def deserializeTest():
+    txt = """V t x00 x03 int
+      l x00 x00 x00 x02
+      I x00 x00 x00 x00
+      I x00 x00 x00 x01
+      z"""      
+    assert(readObjectString(parseData(txt)), [0, 1])
+    
+    txt = """V 
+      l xff xff xff xff
+      I x00 x00 x00 x00
+      I x00 x00 x00 x01
+      I x00 x00 x00 x03
+      z"""      
+    assert(readObjectString(parseData(txt)), [0, 1, 3])
 
 
 # ---------------------------------------------------------
@@ -326,7 +360,8 @@ def runList(funList):
 if __name__ == "__main__":
     try:
         runList([
-                 loopbackTest, 
+                 deserializeTest,
+                 loopbackTest,
                  serializeCallTest,
                  testHessianTypes, 
                  serializeReplyAndFaultTest, 
