@@ -4,13 +4,17 @@ Author Petr Gladkikh (batyi at users.sourceforge.net)
 See http://hessian.caucho.com/ for Hessian protocol introduction.
 Protocol specification is at 
 http://hessian.caucho.com/doc/hessian-1.0-spec.xtp
-See hello.py for sample code. If you need to send Hessian's Xml,
-then construct hessian.hessian.XmlString and pass it as a remote call parameter.
+See hello.py file for sample code.
 
-String types are mapped as follows:
-    Python    Hessian    
-    str       binary
-    unicode   string   
+If you need to send Hessian's Xml, then construct hessian.hessian.XmlString
+and pass it as a remote call parameter.
+
+Sequence types are mapped as follows:
+    Python -> Hessian -> Python     
+    str       binary     str
+    unicode   string     unicode
+    tuple     array      list
+    list      array      list
 
 
 	REQUIREMENTS
@@ -41,11 +45,19 @@ v1.0.2 2008-07-10
 	1. Corrected vector length check during serialisation 
 	(bug #2014787, reported by Jeon Chanseok).
 
-v0.6.0 2007-08-07
+v1.0.1 2008-01-01
+	1. Changed binary data serialization. Python's "str" type is now mapped
+	to Hessian's "binary". 
+	2. Stricter and slightly faster UTF-8 parser.
+	3. Tests improved.
+	4. Happy new year!
+
+v1.0.0 2007-08-11
 	1. Corrected serialization of failure result.
 	2. Client can now specify Hessian's XML and binary types.
 	3. Corrected reply serialization (headers are now read correctly, 
 	thanks to Mark Santos for pointing to this bug).
+	4. Content-Length HTTP header is now sent with request
 	
 v0.5.6 2007-05-13
 	1. Improved performance of UTF8 encoder/decoder. It is now 10-50% faster. 
