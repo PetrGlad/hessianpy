@@ -177,13 +177,13 @@ class Date:
 
     def read(self, ctx, prefix):
         assert prefix in self.codes
-        timestamp_milisecs = unpack('>q', ctx.read(8))[0]
-        return datetime.fromtimestamp(timestamp_milisecs/1000)
+        timestamp_milisecs = unpack('>q', ctx.read(8))[0]        
+        return datetime.fromtimestamp(timestamp_milisecs / 1000.0)
     
     def write(self, ctx, value):
-        timestamp = time.mktime(value.timetuple())
+        timestamp = time.mktime(value.timetuple()) + value.microsecond / 1000000.0 
         ctx.write(self.codes[0])
-        ctx.write(pack(">q", timestamp*1000))
+        ctx.write(pack(">q", timestamp * 1000))
 types.append(Date)
 
 
@@ -206,7 +206,7 @@ class Chunked(ShortSequence):
 
     readChunk = ShortSequence.read # shortcut    
     
-    chunk_size = 2**12 # 4KiB
+    chunk_size = 2 ** 12 # 4KiB
 
     def read(self, ctx, prefix):
         result = "";
@@ -643,7 +643,7 @@ CODE_MAP, TYPE_MAP = makeTypeMaps(types)
 
 
 class ParseContext:
-    def __init__(self, stream, post = lambda x: x):
+    def __init__(self, stream, post=lambda x: x):
         """post - post-processing function for deserialized object.
         Note: not all streamers use self.post
         """
@@ -655,7 +655,7 @@ class ParseContext:
 
 
 class WriteContext:
-    def __init__(self, stream, pre = lambda x: x):
+    def __init__(self, stream, pre=lambda x: x):
         """pre - pre-processing function for object being written. 
         Note: not all streamers use self.pre
         """
@@ -672,15 +672,15 @@ class WriteContext:
         except KeyError:
             self.objectIds[id(obj)] = self.count
             self.count += 1
-            return -1
+            return - 1
 
 
 def printRegisteredTypes():
     "Debugging helper"
     print "Registered types:"
     for t in types:
-        print t, "[", 
-        for c in t.codes: print c,         
+        print t, "[",
+        for c in t.codes: print c,
         print "]",
         if hasattr(t, "ptype"):
             print t.ptype

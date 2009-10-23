@@ -81,7 +81,7 @@ def loopBackTest(classRef, value):
     assert res
 
 
-def loopBackTestTyped(classRef, value, converter = None):
+def loopBackTestTyped(classRef, value, converter=None):
     """ This test is for objects with ambiguous type prefixes,
     'converter' is used for types that are not preserved after
     serialization
@@ -130,8 +130,19 @@ def loopbackTestTypes():
 def testDatetime():
     from datetime import datetime 
     loopBackTest(hessian.Date, datetime.fromtimestamp(0))
-    loopBackTest(hessian.Date, datetime.fromtimestamp(987654321))    
+    loopBackTest(hessian.Date, datetime.fromtimestamp(987654321))
     autoLoopBackTest(datetime.fromtimestamp(3333))
+    
+    # Test that time precision is at least millisecond
+    def wr(val):
+        s = StringIO()
+        hessian.Date().write(WriteContext(s), datetime.fromtimestamp(val))
+        s.seek(0)
+        return hessian.readObject(ParseContext(s))    
+    
+    assert wr(0.001).time().microsecond != wr(0.002).time().microsecond  
+    assert wr(1345.999).time().microsecond != wr(1346.0).time().microsecond
+    assert wr(12345.0) == wr(12345.0)    
 
    
 def testHessianTypes():
@@ -145,7 +156,7 @@ def serializeCallTest():
     loopBackTest(hessian.Call, ("aaa", [], ["ddd", 1]))
     loopBackTest(hessian.Call, ("aaa", [("type", 1)], []))
     loopBackTest(hessian.Call, ("aaa", [("headerName", "headerValue")], [23]))
-    loopBackTest(hessian.Call, ("a",   [("headerName", "headerValue"), 
+    loopBackTest(hessian.Call, ("a", [("headerName", "headerValue"),
                                ("headerName2", "headerValue2")], [23]))
     loopBackTest(hessian.Call, ("aaa", [], \
                         [{"name" : "beaver", "value" : [987654321, 2, 3.0] }]))
@@ -158,7 +169,7 @@ def serializeReplyAndFaultTest():
     loopBackTestTyped(hessian.Reply, ([], False, {"code" : "value"}))
     
     loopBackTestTyped(hessian.Reply, ([("headerName", "headerValue")], True, 33))
-    loopBackTestTyped(hessian.Reply, ([("headerName", "headerValue"), 
+    loopBackTestTyped(hessian.Reply, ([("headerName", "headerValue"),
                                ("headerName2", "headerValue2")], True, 33))
     
     loopBackTestTyped(hessian.Fault, {"message":"an error description", "line":23})
@@ -205,7 +216,7 @@ def warnConnectionRefused(exception, url):
     # If 'Connection refused' or 'getaddrinfo failed'
     if (hasattr(exception, "args") and exception.args[0] in [11001, 10061]) \
         or(hasattr(exception, "args") and exception.reason[0] in [11001, 10061]):
-        print "Warning: Server '" + url +  "'is not available. Can not perform a remote call test."
+        print "Warning: Server '" + url + "'is not available. Can not perform a remote call test."
         return True
     else:
         return False
@@ -234,11 +245,11 @@ class TestHandler(HessianHTTPRequestHandler):
         return a + b
     
     message_map = {
-                   "nothing" : nothing, 
-                   "hello" : hello, 
-                   "askBitchy" : askBitchy, 
-                   "echo" : echo, 
-                   "redirect" : redirect, 
+                   "nothing" : nothing,
+                   "hello" : hello,
+                   "askBitchy" : askBitchy,
+                   "echo" : echo,
+                   "redirect" : redirect,
                    "sum" : sum }
 
 
@@ -255,7 +266,7 @@ class TestServer(Thread):
 
 
 def callBlobTest(proxy):    
-    size = 2**14
+    size = 2 ** 14
     big = u"ЦЦ*муха" * size
     r = proxy.echo(big)
     assert big == r
@@ -325,28 +336,28 @@ def callTestPublic(url):
         # In the next moment nothing continued to happen.
         
         assert "Hello, world" == proxy.hello()
-        print '.', 
+        print '.',
         
         o = {1:"one", 2:"two"}
         assert o == proxy.echo(o)
-        print '.', 
+        print '.',
         
         o = (-1, -2)
         assert list(o) == proxy.echo(o)
-        print '.', 
+        print '.',
         
         o = ["S-word", "happen-s"]
         assert o == proxy.echo(o)
-        print '.', 
+        print '.',
         
         a, b = 1902, 34
         assert (a - b) == proxy.subtract(a, b)
-        print '.', 
+        print '.',
         
         # What about UTF-8?
         padonkRussianMessage = u"Превед!"
         assert padonkRussianMessage == proxy.echo(padonkRussianMessage)
-        print '.', 
+        print '.',
                                                                                   
     except Exception as e:
         st = traceback.format_exc()
@@ -377,9 +388,9 @@ if __name__ == "__main__":
                  loopbackTestTypes,
                  serializeCallTest,
                  testHessianTypes,
-                 testDatetime, 
-                 serializeReplyAndFaultTest, 
-                 referenceTest, 
+                 testDatetime,
+                 serializeReplyAndFaultTest,
+                 referenceTest,
                  realWorldTest1,
                  lambda: callTestLocal("http://localhost:%d/" % TEST_PORT),
                  sslTest
