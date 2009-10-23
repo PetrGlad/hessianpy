@@ -21,8 +21,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from hessian.hessian import *
-from hessian.client import *
+from hessian.hessian import ParseContext, WriteContext, readObjectByPrefix
+from hessian import hessian  
+from hessian.client import HessianProxy
 from hessian.server import HessianHTTPRequestHandler, StoppableHTTPServer
 from StringIO import StringIO
 from time import sleep
@@ -36,6 +37,7 @@ __revision__ = "$Rev$"
 class TestException(Exception):    
     def __init__(self, message):
         self.testMessage = message
+
 
 def readObjectString(txt):
     stream = StringIO(txt)
@@ -58,7 +60,7 @@ def parseData(txt):
 
 def autoLoopBackTest(value):
     s = StringIO()
-    writeObject(WriteContext(s), value, None)    
+    hessian.writeObject(WriteContext(s), value, None)    
     s.seek(0)    
     r = readObjectByPrefix(ParseContext(s), s.read(1))
     assert r == value
@@ -69,7 +71,7 @@ def loopBackTest(classRef, value):
     o = classRef()
     o.write(WriteContext(s), value)
     s.seek(0)
-    r = readObject(ParseContext(s))
+    r = hessian.readObject(ParseContext(s))
     res = False
     try:
         res = r == value
@@ -96,27 +98,27 @@ def loopBackTestTyped(classRef, value, converter = None):
 
 def loopbackTestTypes():
     loopBackTest(hessian.Null, None)
-    loopBackTest(Bool, True)
-    loopBackTest(Bool, False)    
-    loopBackTest(Int, 12343)
-    loopBackTest(Long, 2403914806071207089L)
-    loopBackTest(Double, 0.0)
-    loopBackTest(Double, 123.321)
-    loopBackTest(UnicodeString, u"")
-    loopBackTest(UnicodeString, u"Nice to see ya! длорфызвабьйтцуикзгшщчсмжячмс.")
-    loopBackTest(UnicodeString, "Wahappan?")
-    loopBackTest(Array, [])
-    loopBackTest(Array, ["123", 1])
-    loopBackTest(Array, [3, 3])
-    loopBackTest(Array, [None, [3]])
-    loopBackTest(Array, [[[3]]])
-    loopBackTest(Map, {})
-    loopBackTest(Map, {1 : 2})
-    loopBackTest(Remote, RemoteReference("yo://yeshi/yama"))
+    loopBackTest(hessian.Bool, True)
+    loopBackTest(hessian.Bool, False)    
+    loopBackTest(hessian.Int, 12343)
+    loopBackTest(hessian.Long, 2403914806071207089L)
+    loopBackTest(hessian.Double, 0.0)
+    loopBackTest(hessian.Double, 123.321)
+    loopBackTest(hessian.UnicodeString, u"")
+    loopBackTest(hessian.UnicodeString, u"Nice to see ya! длорфызвабьйтцуикзгшщчсмжячмс.")
+    loopBackTest(hessian.UnicodeString, "Wahappan?")
+    loopBackTest(hessian.Array, [])
+    loopBackTest(hessian.Array, ["123", 1])
+    loopBackTest(hessian.Array, [3, 3])
+    loopBackTest(hessian.Array, [None, [3]])
+    loopBackTest(hessian.Array, [[[3]]])
+    loopBackTest(hessian.Map, {})
+    loopBackTest(hessian.Map, {1 : 2})
+    loopBackTest(hessian.Remote, hessian.RemoteReference("yo://yeshi/yama"))
         
-    loopBackTestTyped(Tuple, (), list)
-    loopBackTestTyped(Tuple, (1,), list)
-    loopBackTestTyped(Tuple, ("equivalence", 1, {"":[]}), list)
+    loopBackTestTyped(hessian.Tuple, (), list)
+    loopBackTestTyped(hessian.Tuple, (1,), list)
+    loopBackTestTyped(hessian.Tuple, ("equivalence", 1, {"":[]}), list)
     
     autoLoopBackTest(
         u"\x07Nice to see ya! )*)(*РєР°РјРїСѓС‚РµСЂ&)(*\x00&)(*&)(*&&*\x09^%&^%$%^$%$!#@!")
@@ -126,50 +128,50 @@ def loopbackTestTypes():
 
 def testDatetime():
     from datetime import datetime 
-    loopBackTest(Date, datetime.fromtimestamp(0))
-    loopBackTest(Date, datetime.fromtimestamp(987654321))    
+    loopBackTest(hessian.Date, datetime.fromtimestamp(0))
+    loopBackTest(hessian.Date, datetime.fromtimestamp(987654321))    
     autoLoopBackTest(datetime.fromtimestamp(3333))
 
    
 def testHessianTypes():
     "Test explicit setting of serialized types"    
-    autoLoopBackTest(XmlString(u"<hello who=\"Небольшой текст тут!\"/>"))    
+    autoLoopBackTest(hessian.XmlString(u"<hello who=\"Небольшой текст тут!\"/>"))    
     
 
 def serializeCallTest():    
-    loopBackTest(Call, ("aaa", [], []))
-    loopBackTest(Call, ("aaa", [], [1]))
-    loopBackTest(Call, ("aaa", [], ["ddd", 1]))
-    loopBackTest(Call, ("aaa", [("type", 1)], []))
-    loopBackTest(Call, ("aaa", [("headerName", "headerValue")], [23]))
-    loopBackTest(Call, ("a",   [("headerName", "headerValue"), 
+    loopBackTest(hessian.Call, ("aaa", [], []))
+    loopBackTest(hessian.Call, ("aaa", [], [1]))
+    loopBackTest(hessian.Call, ("aaa", [], ["ddd", 1]))
+    loopBackTest(hessian.Call, ("aaa", [("type", 1)], []))
+    loopBackTest(hessian.Call, ("aaa", [("headerName", "headerValue")], [23]))
+    loopBackTest(hessian.Call, ("a",   [("headerName", "headerValue"), 
                                ("headerName2", "headerValue2")], [23]))
-    loopBackTest(Call, ("aaa", [], \
+    loopBackTest(hessian.Call, ("aaa", [], \
                         [{"name" : "beaver", "value" : [987654321, 2, 3.0] }]))
 
 
 def serializeReplyAndFaultTest():    
-    loopBackTestTyped(Reply, ([], True, 1))
-    loopBackTestTyped(Reply, ([], True, {"code" : [1, 2]}))
-    loopBackTestTyped(Reply, ([], False, {}))
-    loopBackTestTyped(Reply, ([], False, {"code" : "value"}))
+    loopBackTestTyped(hessian.Reply, ([], True, 1))
+    loopBackTestTyped(hessian.Reply, ([], True, {"code" : [1, 2]}))
+    loopBackTestTyped(hessian.Reply, ([], False, {}))
+    loopBackTestTyped(hessian.Reply, ([], False, {"code" : "value"}))
     
-    loopBackTestTyped(Reply, ([("headerName", "headerValue")], True, 33))
-    loopBackTestTyped(Reply, ([("headerName", "headerValue"), 
+    loopBackTestTyped(hessian.Reply, ([("headerName", "headerValue")], True, 33))
+    loopBackTestTyped(hessian.Reply, ([("headerName", "headerValue"), 
                                ("headerName2", "headerValue2")], True, 33))
     
-    loopBackTestTyped(Fault, {"message":"an error description", "line":23})
+    loopBackTestTyped(hessian.Fault, {"message":"an error description", "line":23})
 
 
 def referenceTest():
     m = {"name" : "beaver", "value" : [987654321, 2, 3.0] }
-    loopBackTest(Call, ("aaa", [], [m, m]))
+    loopBackTest(hessian.Call, ("aaa", [], [m, m]))
     a = [1, 2, 3]
     a[2] = a
-    loopBackTest(Call, ("aaa", [], [a]))
+    loopBackTest(hessian.Call, ("aaa", [], [a]))
     b = [a, 1]
     a[0] = b
-    loopBackTest(Call, ("aaa", [], [b, a]))
+    loopBackTest(hessian.Call, ("aaa", [], [b, a]))
 
     
 def deserializeTest():
