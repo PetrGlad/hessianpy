@@ -11,8 +11,8 @@ setup(name='HessianPy',
 	platforms="Platform independent",	
 	long_description="""HessianPy is an implementation of Hessian protocol. Hessian is platform
 independent binary RPC (remote procedure call) protocol (see 
-http://www.caucho.com/resin-3.0/protocols/hessian.xtp for more detailed description).""",
+http://hessian.caucho.com/doc/hessian-1.0-spec.xtp for more detailed description).""",
 	
-	packages=['hessian', 'hessian.test'],
-    package_data={'hessian.test': ['server.pem']},
+        packages=['hessian', 'hessian.test'],
+        package_data={'hessian.test': ['server.pem']},
     )
