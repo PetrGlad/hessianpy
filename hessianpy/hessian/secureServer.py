@@ -10,7 +10,7 @@
 # SSL secure communications" by Sébastien Martini published at ActiveState 
 # Programmer Network.
 #
-# This code requires pyOpenSSL (and OpenSSL itself).
+# This code requires pyOpenSSL at least version 0.7 and OpenSSL itself. 
 #
 # Copyright 2006 Petr Gladkikh (batyi at users sourceforge net)
 #
@@ -28,10 +28,9 @@
 #
 from server import HessianHTTPRequestHandler
 
-import socket, os
+import socket
 from SocketServer import BaseServer
 from BaseHTTPServer import HTTPServer
-from SimpleHTTPServer import SimpleHTTPRequestHandler
 from OpenSSL import SSL
 
 __revision__ = "$Rev: 33 $"
@@ -46,10 +45,11 @@ class HessianHTTPSRequestHandler(HessianHTTPRequestHandler):
 class SecureHTTPServer(HTTPServer):
     def __init__(self, server_address, HandlerClass, keyfile = 'hessian/test/server.pem'):
         BaseServer.__init__(self, server_address, HandlerClass)
-        ctx = SSL.Context(SSL.SSLv23_METHOD)
+        ctx = SSL.Context(SSL.SSLv23_METHOD) #@UndefinedVariable
         ctx.use_privatekey_file (keyfile)
         ctx.use_certificate_file(keyfile)
-        self.socket = SSL.Connection(ctx, socket.socket(self.address_family, 
-                                                        self.socket_type))
+        self.socket = SSL.Connection( #@UndefinedVariable
+                                     ctx, 
+                                     socket.socket(self.address_family, self.socket_type))
         self.server_bind()
         self.server_activate()

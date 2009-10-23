@@ -20,9 +20,11 @@
 #   limitations under the License.
 #
 from struct import pack, unpack
-from types import StringType
+#from types import StringType
 import UTF8
 from common import HessianError
+from datetime import datetime
+import time
 
 __revision__ = "$Rev$"
 
@@ -38,7 +40,7 @@ class ValueStreamer:
     ptype = None # Python type of value (or type name string if it is class)
     
     def read(self, stream):
-        "Init value from Stream"
+        "Initialize value from Stream"
         assert False # abstract        
     
     def write(self, stream, value):
@@ -167,6 +169,22 @@ class Double:
         ctx.write(self.codes[0])
         ctx.write(pack(">d", value))
 types.append(Double)
+
+
+class Date:
+    codes = ["d"]
+    ptype = datetime
+
+    def read(self, ctx, prefix):
+        assert prefix in self.codes
+        timestamp_milisecs = unpack('>q', ctx.read(8))[0]
+        return datetime.fromtimestamp(timestamp_milisecs/1000)
+    
+    def write(self, ctx, value):
+        timestamp = time.mktime(value.timetuple())
+        ctx.write(self.codes[0])
+        ctx.write(pack(">q", timestamp*1000))
+types.append(Date)
 
 
 class ShortSequence:
@@ -483,7 +501,7 @@ types.append(Call)
 
 
 class Fault:
-    "Remote_call error_description."
+    "Remote_call's error_description."
     codes = ["f"]
     
     def read(self, ctx, prefix):
@@ -491,11 +509,11 @@ class Fault:
         result = {}
         prefix = ctx.read(1)
         while prefix != "z":
-            k = readObjectByPrefix(ctx, prefix)
+            key = readObjectByPrefix(ctx, prefix)
             prefix = ctx.read(1)
-            v = readObjectByPrefix(ctx, prefix)
+            val = readObjectByPrefix(ctx, prefix)
             prefix = ctx.read(1)
-            result[k] = v
+            result[key] = val
         return result
     
     def write(self, ctx, fault):
@@ -531,9 +549,9 @@ class Reply:
             headers.append(self.header_streamer.read(ctx, prefix))
             prefix = ctx.read(1)        
 
-        succseeded = not prefix in self.fault_streamer.codes
+        succeeded = not prefix in self.fault_streamer.codes
         
-        if succseeded:
+        if succeeded:
             result = readObjectByPrefix(ctx, prefix)
             prefix = ctx.read(1)
             if prefix != 'z':
@@ -542,7 +560,7 @@ class Reply:
             result = self.fault_streamer.read(ctx, prefix)
             # closing "z" is already read by Fault.read
         
-        return (headers, succseeded, result)
+        return (headers, succeeded, result)
 
     def write(self, ctx, reply):
         (headers, succeeded, result) = reply
@@ -571,7 +589,7 @@ class Remote:
     """Reference to a remote interface.
     TODO: We could read and write interface types if necessary 
     (add interface type name string to RemoteInterface).
-    This feaure is ignored for now."""
+    This feature is ignored for now."""
     
     codes = ["r"]
     ptype = RemoteReference
@@ -597,7 +615,7 @@ types.append(Remote)
 
 
 def makeTypeMaps(types):
-    """ Build maps that allow to find apropriate 
+    """ Build maps that allow to find appropriate 
     serializer (by object type) or deserializer (by prefix symbol).
     
     If serialized type does not match serializer class (true for 
@@ -606,7 +624,7 @@ def makeTypeMaps(types):
     is used as type.
     """
     codeMap = {} # type code to streamer map
-    typeMap = {} # python type to streamer map
+    typeMap = {} # Python type to streamer map
     for c in types:
         streamer = c()
         
@@ -629,7 +647,7 @@ CODE_MAP, TYPE_MAP = makeTypeMaps(types)
 
 class ParseContext:
     def __init__(self, stream, post = lambda x: x):
-        """post - postprocessing function for deserialized object.
+        """post - post-processing function for deserialized object.
         Note: not all streamers use self.post
         """
         self.referencedObjects = [] # objects that may be referenced by Ref
@@ -641,7 +659,7 @@ class ParseContext:
 
 class WriteContext:
     def __init__(self, stream, pre = lambda x: x):
-        """pre - preprocessing function for object being written. 
+        """pre - pre-processing function for object being written. 
         Note: not all streamers use self.pre
         """
         self.objectIds = {} # is used for back references
@@ -651,10 +669,10 @@ class WriteContext:
         self.pre = pre
         
     def getRefId(self, obj):
-        "Return numeric ref id if object has been already met"
+        "Return numeric reference id if object has been already met."
         try:
             return self.objectIds[id(obj)]
-        except KeyError, e:
+        except KeyError:
             self.objectIds[id(obj)] = self.count
             self.count += 1
             return -1

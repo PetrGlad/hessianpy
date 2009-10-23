@@ -30,6 +30,7 @@ from StringIO import StringIO
 __revision__ = "$Rev$"
 
 
+
 def deref(obj, auth):
     "Replace hessian.RemoteReference with live proxy"
     if hasattr(obj, "__class__") \
@@ -92,7 +93,10 @@ class HessianProxy:
         (headers, status, value) = hessian.Reply().read(ctx, ctx.read(1))
         if not status:
             # value is a description of remote call
-            raise Exception(value) 
+            assert type(value) == dict            
+            e = Exception()
+            e.__dict__.update(value)
+            raise e 
         else:
             return value
         

@@ -33,37 +33,34 @@ class HessianHTTPRequestHandler(BaseHTTPRequestHandler):
     """Subclasses should create clss's member message_map which maps method 
     names into function objects """
     
-    MAX_CHUNK_SIZE = 2^11
+    MAX_CHUNK_SIZE = 2 ^ 12
     
     def do_POST(self):        
         try:
-            #req = self.rfile.read(5) # debug
-            #print "got request", map(lambda x : "%02x" % ord(x), req[:20]), "\n\t:", req[:20] # debug            
-            #self.rfile.seek(0)
             ctx = hessian.ParseContext(self.rfile)
             (method, headers, params) = hessian.Call().read(ctx, ctx.read(1))
-        except Exception, e:
+        except Exception as e:
             self.send_error(500, "Can not parse call request. Error: " + str(e))
             return
       
-        if not self.message_map.has_key(method):
-            # print "Message map:", self.message_map # debug
+        if not self.message_map.has_key(method):    
             self.send_error(500, "Method '" + method + "' is not found")
             return
         
         succeeded = True
         try:
-            result = self.message_map[method](*params)
-        except Exception:
+            result = self.message_map[method](*([self] + params))
+        except Exception as e:
             stackTrace = traceback.format_exc()
-            succeeded = False
-            result = {"stackTrace" : stackTrace}
+            succeeded = False                        
+            result = {"stackTrace" : stackTrace, "args" : e.args}
+            result.update(e.__dict__)             
         
         try:
             sio = StringIO()
             hessian.Reply().write(
                           hessian.WriteContext(sio),
-                          (headers, succeeded, result) )
+                          (headers, succeeded, result))
             reply = sio.getvalue()
         except Exception:
             stackTrace = traceback.format_exc()
@@ -77,7 +74,8 @@ class HessianHTTPRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(reply)
 
-
+class ServerStoppedError(Exception):
+    pass
 
 class StoppableHTTPServer(HTTPServer):
     """
@@ -87,24 +85,22 @@ class StoppableHTTPServer(HTTPServer):
     
     def server_bind(self):
         HTTPServer.server_bind(self)
-        #self.socket.settimeout(200)
         self.run = True
 
     def get_request(self):
         while self.run:
-            try:
-                sock, addr = self.socket.accept()
-                return (sock, addr)
-            except socket.timeout, e:
-                print "Exception--", e # DEBUG
-                pass
+            return self.socket.accept()
+        raise ServerStoppedError()
 
     def stop(self):
         self.run = False
 
     def serve(self):
-        while self.run:
-            self.handle_request()
+        try:
+            while self.run:
+                self.handle_request()
+        except ServerStoppedError:
+            return
         
 
 # ---------------------------------------------------------
@@ -127,6 +123,7 @@ if __name__ == "__main__":
     httpd = StoppableHTTPServer(server_address, TestHandler)
     print "Serving from ", server_address
     httpd.serve()
+    import time
     time.sleep(200)
     httpd.stop()
     print "Stopping test server"

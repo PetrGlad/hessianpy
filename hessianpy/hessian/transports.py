@@ -115,7 +115,7 @@ class BasicUrlLibTransport(HessianTransport):
         r.add_header("User-agent", "HessianPy/%s" % __version__)
         r.add_header("Content-type", "application/octet-stream")
         
-        response = self._opener.open(r)        
+        response = self._opener.open(r)
         result = StringIO(response.read())
         response.close()
         return result        

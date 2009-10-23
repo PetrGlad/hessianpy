@@ -19,7 +19,7 @@ Sequence types are mapped as follows:
 
 	REQUIREMENTS
 	
-Python 2.4 or higher (2.5 recommended). 
+Python 2.6 
 You can download Python interpreter from http://python.org/.
 
 Note that (optional) HTTPS test requires OpenSSL library (see http://openssl.org) 
@@ -41,8 +41,16 @@ For more details see "Installing Python Modules" section in Python's documentati
 
 	RELEASE NOTES
 
+v1.0.3 2008-07-10
+    1. Python 2.6 is now required ("except Exception as var" construction is used)
+    2. Added support for datetime from Hessian 2.0 
+        (see patch https://sourceforge.net/tracker/?func=detail&aid=2881772&group_id=154438&atid=791785 at sourceforge.net)
+    3. Remote exceptions handling changed (exception object attributes 
+        and .args are retained).
+    4. Sample server shutdown cleaned up
+
 v1.0.2 2008-07-10
-	1. Corrected vector length check during serialisation 
+	1. Corrected vector length check during serialization 
 	(bug #2014787, reported by Jeon Chanseok).
 
 v1.0.1 2008-01-01

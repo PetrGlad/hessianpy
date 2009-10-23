@@ -25,14 +25,17 @@ from hessian.hessian import *
 from hessian.client import *
 from hessian.server import HessianHTTPRequestHandler, StoppableHTTPServer
 from StringIO import StringIO
-from time import time
+from time import sleep
 from threading import Thread
 import traceback
-import urllib2
 
 
 __revision__ = "$Rev$"
 
+
+class TestException(Exception):    
+    def __init__(self, message):
+        self.testMessage = message
 
 def readObjectString(txt):
     stream = StringIO(txt)
@@ -70,10 +73,9 @@ def loopBackTest(classRef, value):
     res = False
     try:
         res = r == value
-    except RuntimeError, e:
+    except RuntimeError:
         # Fall-back in case of recursion error
-        res = `r` == `value`
-        
+        res = `r` == `value`        
     assert res
 
 
@@ -102,7 +104,7 @@ def loopbackTest():
     loopBackTest(Double, 123.321)
     loopBackTest(UnicodeString, u"")
     loopBackTest(UnicodeString, u"Nice to see ya! длорфызвабьйтцуикзгшщчсмжячмс.")
-    loopBackTest(UnicodeString, "Nice to see ya!")
+    loopBackTest(UnicodeString, "Wahappan?")
     loopBackTest(Array, [])
     loopBackTest(Array, ["123", 1])
     loopBackTest(Array, [3, 3])
@@ -121,8 +123,13 @@ def loopbackTest():
     autoLoopBackTest(
         "\x07Nice to see ya! )*)(*РєР°РјРїСѓС‚РµСЂ&)(*\x00&)(*&)(*&&*\x09^%&^%$%^$%$!#@!")
     
+def testDatetime():
+    assert "Test is not implemented" == True
+    #from datetime import datetime 
+    #loopbackTest()
    
-def testHessianTypes():    
+def testHessianTypes():
+    "Test explicit setting of serialized types"    
     autoLoopBackTest(XmlString(u"<hello who=\"Небольшой текст тут!\"/>"))    
     
 
@@ -132,7 +139,7 @@ def serializeCallTest():
     loopBackTest(Call, ("aaa", [], ["ddd", 1]))
     loopBackTest(Call, ("aaa", [("type", 1)], []))
     loopBackTest(Call, ("aaa", [("headerName", "headerValue")], [23]))
-    loopBackTest(Call, ("aaa", [("headerName", "headerValue"), 
+    loopBackTest(Call, ("a",   [("headerName", "headerValue"), 
                                ("headerName2", "headerValue2")], [23]))
     loopBackTest(Call, ("aaa", [], \
                         [{"name" : "beaver", "value" : [987654321, 2, 3.0] }]))
@@ -168,7 +175,7 @@ def deserializeTest():
       I x00 x00 x00 x00
       I x00 x00 x00 x01
       z"""      
-    assert(readObjectString(parseData(txt)), [0, 1])
+    assert(readObjectString(parseData(txt)) == [0, 1])
     
     txt = """V 
       l xff xff xff xff
@@ -176,7 +183,7 @@ def deserializeTest():
       I x00 x00 x00 x01
       I x00 x00 x00 x03
       z"""      
-    assert(readObjectString(parseData(txt)), [0, 1, 3])
+    assert(readObjectString(parseData(txt)) == [0, 1, 3])
 
 
 # ---------------------------------------------------------
@@ -202,22 +209,22 @@ class TestHandler(HessianHTTPRequestHandler):
 
     OTHER_PREFIX = "somewhere"
     
-    def nothing():
+    def nothing(self):
         pass
     
-    def hello():
+    def hello(self):
         return SECRET_MESSAGE
     
-    def echo(some):
+    def echo(self, some):
         return some
         
-    def askBitchy():
-        raise Exception("Go away!")
+    def askBitchy(self):
+        raise TestException("Go away!")
     
-    def redirect(home_url):
+    def redirect(self, home_url):
         return hessian.RemoteReference(home_url + TestHandler.OTHER_PREFIX)
     
-    def sum(a, b):
+    def sum(self, a, b):
         return a + b
     
     message_map = {
@@ -254,7 +261,7 @@ def redirectTest(proxy):
     assert s == 777777
     
     p = proxy    
-    for k in range(3): p = p.echo(p)
+    for _ in range(3): p = p.echo(p)
     assert p.hello() == SECRET_MESSAGE
   
 
@@ -262,6 +269,8 @@ def callTestLocal(url):
     srv = TestServer()
     srv.setDaemon(True)
     srv.start()
+    # Due to some reason server does not accept connections right after it's started.
+    sleep(0.5) 
     
     proxy = HessianProxy(url)
         
@@ -274,9 +283,8 @@ def callTestLocal(url):
     try:
         proxy.askBitchy()
         assert False # should not get here
-    except Exception, e:
-        # print traceback.format_exc() # debug
-        pass    
+    except Exception as e:
+        assert "Go away!" == e.testMessage 
     
     # What about UTF-8?
     padonkMessage = u"Пррревед обонентеги!"
@@ -286,17 +294,16 @@ def callTestLocal(url):
     redirectTest(proxy)
     
     if False:
+        from time import time 
         print "Some performance measurements..."
         count = 500
         start = time()
-        for i in range(count):
+        for _ in range(count):
             proxy.hello()
         fin = time()
         print "One call takes", 1000.0 * (fin - start) / count, "mSec."        
 
     srv.stop()
-    proxy.nothing() # XXX force accept loop so thread exits sooner :)
-
 
 def realWorldTest1():
     import zlib, pickle     
@@ -335,7 +342,7 @@ def callTestPublic(url):
         assert padonkRussianMessage == proxy.echo(padonkRussianMessage)
         print '.', 
                                                                                   
-    except Exception, e:
+    except Exception as e:
         st = traceback.format_exc()
         if not warnConnectionRefused(e, url):
             print st
@@ -344,9 +351,9 @@ def callTestPublic(url):
 
 def sslTest():
     try:
-        import OpenSSL
-    except Exception, e:
-        print "Warning: No OpenSSL module. SSL will not be tested."
+        from OpenSSL import SSL # @UnusedImport
+    except ImportError:
+        print "Warning: Can not load OpenSSL module. SSL will not be tested."
         return
     
     import hessian.test.testSecure
@@ -363,7 +370,8 @@ if __name__ == "__main__":
                  deserializeTest,
                  loopbackTest,
                  serializeCallTest,
-                 testHessianTypes, 
+                 testHessianTypes,
+                 testDatetime, 
                  serializeReplyAndFaultTest, 
                  referenceTest, 
                  realWorldTest1,
@@ -377,6 +385,6 @@ if __name__ == "__main__":
         
         print "\nTests passed."
         
-    except Exception, e:
+    except Exception as e:
         st = traceback.format_exc()
-        print "\nError occured:\n", st
+        print "\nError occurred:\n", st

@@ -29,19 +29,19 @@
 #
 from time import sleep
 from threading import Thread
-from hessian.secureServer import *
+from hessian.secureServer import SecureHTTPServer, HessianHTTPSRequestHandler
 from hessian.client import HessianProxy
 
 
 __revision__ = "$Rev: 33 $"
 
 
-TEST_PORT = 7771
+TEST_PORT = 7778
 
 
 class TestHandler(HessianHTTPSRequestHandler):
     
-    def echo(some):
+    def echo(self, some):
         return some
     
     message_map = { "echo" : echo }
