@@ -124,6 +124,7 @@ def loopbackTestTypes():
         u"\x07Nice to see ya! )*)(*РєР°РјРїСѓС‚РµСЂ&)(*\x00&)(*&)(*&&*\x09^%&^%$%^$%$!#@!")
     autoLoopBackTest(
         "\x07Nice to see ya! )*)(*РєР°РјРїСѓС‚РµСЂ&)(*\x00&)(*&)(*&&*\x09^%&^%$%^$%$!#@!")
+    autoLoopBackTest(u"Пррревед обонентеги!")
 
 
 def testDatetime():
@@ -254,7 +255,7 @@ class TestServer(Thread):
 
 
 def callBlobTest(proxy):    
-    size = 2**11
+    size = 2**14
     big = u"ЦЦ*муха" * size
     r = proxy.echo(big)
     assert big == r
@@ -283,8 +284,8 @@ def callTestLocal(url):
     assert None == msg
       
     msg = proxy.hello()
-    assert SECRET_MESSAGE == msg    
-        
+    assert SECRET_MESSAGE == msg
+    
     try:
         proxy.askBitchy()
         assert False # should not get here
@@ -298,10 +299,10 @@ def callTestLocal(url):
     callBlobTest(proxy)
     redirectTest(proxy)
     
-    if False:
+    if True:
         from time import time 
         print "Some performance measurements..."
-        count = 500
+        count = 1000
         start = time()
         for _ in range(count):
             proxy.hello()

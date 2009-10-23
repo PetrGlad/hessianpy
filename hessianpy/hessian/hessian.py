@@ -231,19 +231,20 @@ class Chunked(ShortSequence):
         ctx.write(value[pos : ])
 
 
-class UTF8Sequence(Chunked):
-    """We can not use Chunked as base as Chunked counts octets in stream while 
-    UTF8 based sequences count lengths in symbols.    
+class UTF8Sequence:
+    """
+    Base class for UTF8 sequences (strings and xml).
+    
+    Note: We can not use Chunked as base for this class as Chunked
+    counts octets in stream while UTF8 based sequences count
+    lengths in symbols.    
     """
     
     def readChunk(self, ctx, prefix):
-        result = u""
-        count = readShort(ctx)
-        for ci in range(count):
-            result += unichr(UTF8.readSymbol(ctx.read))
-        return result
+        count = readShort(ctx)                
+        return UTF8.readString(ctx, count)
             
-    def read(self, ctx, prefix):
+    def read(self, ctx, prefix):                
         result = u""
         while (prefix == self.codes[1]):
             result += self.readChunk(ctx, prefix)
@@ -255,15 +256,11 @@ class UTF8Sequence(Chunked):
     def writeChunk(self, ctx, val):
         length = len(val)
         writeShort(ctx, length)
-        for k in range(length):
-            for byte in UTF8.symbolToUTF8(ord(val[k])):
-                ctx.write(byte)
+        ctx.write(val.encode("UTF-8"))
 
     def write(self, ctx, value):
         length = len(value)        
         pos = 0
-        # TODO write symbol-by symbol here
-        # How do we calculate chunk sizes here
         while pos < length - Chunked.chunk_size:
             ctx.write(self.codes[1])
             self.writeChunk(ctx, value[pos : pos + Chunked.chunk_size])

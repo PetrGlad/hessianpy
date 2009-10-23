@@ -111,23 +111,28 @@ def symbolToUTF8Py(codePoint):
 
 
 import sys
+assert sys.version_info[0:2] >= (2, 5)
+import codecs
 
-if sys.version_info[0:2] >= (2, 5):
-    import codecs
-    
-    utf8Codec = codecs.lookup("UTF-8")    
-    encoder = utf8Codec.incrementalencoder()
-    
-    readSymbol = readSymbolPy
-    symbolToUTF8 = lambda codePoint : encoder.encode(unichr(codePoint))
-else:
-    readSymbol = readSymbolPy
-    symbolToUTF8 = symbolToUTF8Py
+readSymbol = readSymbolPy
+symbolToUTF8 = symbolToUTF8Py
+ 
+def readString(source, size):
+    return u"".join([unichr(readSymbol(source.read)) for _ in range(size)])
 
+def readString2(source, size):
+    result = u""
+    for _ in range(size):
+        result += unichr(readSymbol(source.read))
+    return result
+
+
+# ----------------------------------------------------------
+# Tests
 
 def bruteDecoderTest():
     from StringIO import StringIO    
-    for c in xrange(0, 0xffff):        
+    for c in xrange(0, 0xffff):
         assert readSymbol(StringIO(unichr(c).encode("UTF-8")).read) == c
          
 def test():    
@@ -180,13 +185,18 @@ def testPerformance():
     from time import time as now
     src = u"(Цой|punk|Ленин)Жив!" * 20000
     u0 = src.encode("UTF-8")
-    
+    #--------------------------
     tStart = now()
     for c in src:
         symbolToUTF8(ord(c))
     tEncode = now() - tStart
     print "Encoding",  (len(src) / tEncode), "symbols/sec"
-    
+    #--------------------------
+    tStart = now()
+    src.encode("UTF-8")    
+    tEncode = now() - tStart
+    print "Encoding (native)",  (len(src) / tEncode), "symbols/sec"
+    #--------------------------
     tStart = now()
     s_read = StringIO(u0)
     while True:
@@ -195,6 +205,33 @@ def testPerformance():
             break 
     tDecode = now() - tStart       
     print "Decoding",  (len(src) / tDecode), "symbols/sec"
+    
+    #--------------------------
+    tStart = now()
+    s_read = StringIO(u0)
+    readString(s_read, len(src))     
+    tDecode = now() - tStart       
+    print "Decoding(readString)",  (len(src) / tDecode), "symbols/sec"
+    #--------------------------
+#    tStart = now()
+#    s_read = StringIO(u0)
+#    readString2(s_read, len(src))     
+#    tDecode = now() - tStart       
+#    print "Decoding(readString2)",  (len(src) / tDecode), "symbols/sec"
+    
+    #--------------------------
+    reader = codecs.lookup("UTF-8").streamreader(StringIO(u0), 'strict')
+    tStart = now()
+    chunk = 4096
+    while True:        
+        # :( If read size is > 1 this may read beyond string and break parser
+        # With read size == 1 it is even slower than hand-written procedure (for non ascii chars)
+        readSize = 1 
+        repr = reader.read(readSize, chunk)
+        if len(repr) == 0:
+            break 
+    tDecode = now() - tStart       
+    print "Decoding(native)",  (len(src) / tDecode), "symbols/sec"
 
 
 if __name__ == "__main__":
