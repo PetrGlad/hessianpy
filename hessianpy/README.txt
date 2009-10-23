@@ -42,6 +42,9 @@ For more details see "Installing Python Modules" section in Python's documentati
 
 	RELEASE NOTES
 
+v1.0.4 2009-10-23
+    1. Improved Date precision (to millisecond)
+
 v1.0.3 2009-10-23
     1. Python 2.6 is now required ("except Exception as var" construction is used)
     2. Added support for Date type   
