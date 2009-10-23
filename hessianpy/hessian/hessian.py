@@ -177,13 +177,13 @@ class Date:
 
     def read(self, ctx, prefix):
         assert prefix in self.codes
-        timestamp_milisecs = unpack('>q', ctx.read(8))[0]        
-        return datetime.fromtimestamp(timestamp_milisecs / 1000.0)
+        milliseconds = unpack('>q', ctx.read(8))[0]        
+        return datetime.fromtimestamp(milliseconds / 1000.0)
     
     def write(self, ctx, value):
-        timestamp = time.mktime(value.timetuple()) + value.microsecond / 1000000.0 
+        seconds = time.mktime(value.timetuple()) + value.microsecond / 1000000.0 
         ctx.write(self.codes[0])
-        ctx.write(pack(">q", timestamp * 1000))
+        ctx.write(pack(">q", seconds * 1000))
 types.append(Date)
 
 
