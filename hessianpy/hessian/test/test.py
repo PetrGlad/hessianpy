@@ -94,7 +94,7 @@ def loopBackTestTyped(classRef, value, converter = None):
     assert o.read(s_in, s_in.read(1)) == value
 
 
-def loopbackTest():
+def loopbackTestTypes():
     loopBackTest(hessian.Null, None)
     loopBackTest(Bool, True)
     loopBackTest(Bool, False)    
@@ -122,11 +122,14 @@ def loopbackTest():
         u"\x07Nice to see ya! )*)(*РєР°РјРїСѓС‚РµСЂ&)(*\x00&)(*&)(*&&*\x09^%&^%$%^$%$!#@!")
     autoLoopBackTest(
         "\x07Nice to see ya! )*)(*РєР°РјРїСѓС‚РµСЂ&)(*\x00&)(*&)(*&&*\x09^%&^%$%^$%$!#@!")
-    
+
+
 def testDatetime():
-    assert "Test is not implemented" == True
-    #from datetime import datetime 
-    #loopbackTest()
+    from datetime import datetime 
+    loopBackTest(Date, datetime.fromtimestamp(0))
+    loopBackTest(Date, datetime.fromtimestamp(987654321))    
+    autoLoopBackTest(datetime.fromtimestamp(3333))
+
    
 def testHessianTypes():
     "Test explicit setting of serialized types"    
@@ -368,7 +371,7 @@ if __name__ == "__main__":
     try:
         runList([
                  deserializeTest,
-                 loopbackTest,
+                 loopbackTestTypes,
                  serializeCallTest,
                  testHessianTypes,
                  testDatetime, 

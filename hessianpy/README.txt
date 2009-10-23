@@ -10,11 +10,12 @@ If you need to send Hessian's Xml, then construct hessian.hessian.XmlString
 and pass it as a remote call parameter.
 
 Sequence types are mapped as follows:
-    Python -> Hessian -> Python     
-    str       binary     str
-    unicode   string     unicode
+    Python -> Hessian -> Python
     tuple     array      list
-    list      array      list
+    list      array      list     
+    str       binary     str
+    unicode   string     unicode    
+    datetime  date       datetime
 
 
 	REQUIREMENTS
@@ -41,9 +42,9 @@ For more details see "Installing Python Modules" section in Python's documentati
 
 	RELEASE NOTES
 
-v1.0.3 2008-07-10
+v1.0.3 2009-10-23
     1. Python 2.6 is now required ("except Exception as var" construction is used)
-    2. Added support for datetime from Hessian 2.0 
+    2. Added support for Date type   
         (see patch https://sourceforge.net/tracker/?func=detail&aid=2881772&group_id=154438&atid=791785 at sourceforge.net)
     3. Remote exceptions handling changed (exception object attributes 
         and .args are retained).
